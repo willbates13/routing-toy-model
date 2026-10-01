@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AOA toy model — routing boxes to factories</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="mark">AOA toy model</div>
+    <nav>
+      <a href="#demand">Demand</a>
+      <a href="#routing">Routing</a>
+      <a href="#targets">Closing the gap</a>
+      <a href="#explorer">Beat the baseline</a>
+    </nav>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Every execution, the same boxes get split between two factories.</h1>
+    <p class="lede">
+      Customers order boxes. A box is just a vector: how many units of each SKU it needs, with
+      most SKUs at zero. A routing run — an <em>execution</em> — decides which factory picks
+      which box. Between executions customers change their orders, so the demand each factory
+      is planning against keeps moving.
+    </p>
+    <p class="lede">
+      Every execution is a forecast of what each factory will pick, and the last execution is
+      the actual. The factories buy ingredients against the forecast, so if a box hops between
+      sites both of them get it wrong even when the network-wide forecast was fine. That
+      difference is the error this model is about.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#demand">Start with demand</a>
+      <a class="btn ghost" href="#explorer">Try to beat the baseline</a>
+    </div>
+  </div>
+</section>
+
+<section class="concept">
+  <div class="wrap">
+    <h2>Two building blocks</h2>
+    <p class="sub">The whole model is two small classes: a box and a factory.</p>
+    <div class="cards">
+      <div class="card">
+        <h3>A box is a SKU vector</h3>
+        <svg width="100%" height="150" viewBox="0 0 300 150" role="img"
+             aria-label="A box is a vector of SKU quantities, mostly zero, drawn as a tile of cells">
+          <g font-family="ui-monospace, monospace" font-size="8.5" fill="#86847a">
+            <text x="0" y="12">SKU</text>
+            <text x="34" y="12">0</text><text x="60" y="12">1</text><text x="86" y="12">2</text>
+            <text x="112" y="12">3</text><text x="138" y="12">4</text><text x="164" y="12">5</text>
+            <text x="190" y="12">6</text><text x="216" y="12">7</text><text x="242" y="12">8</text>
+            <text x="268" y="12">9</text>
+          </g>
+          <g>
+            <rect x="30" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="56" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.85"/>
+            <rect x="82" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="108" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.45"/>
+            <rect x="134" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="160" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="186" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.65"/>
+            <rect x="212" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="238" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+            <rect x="264" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
+          </g>
+          <g font-family="ui-monospace, monospace" font-size="10" fill="#16150f">
+            <text x="36" y="32">0</text><text x="62" y="32" fill="#fcfcfb">7</text><text x="88" y="32">0</text>
+            <text x="114" y="32">3</text><text x="140" y="32">0</text><text x="166" y="32">0</text>
+            <text x="192" y="32" fill="#fcfcfb">5</text><text x="218" y="32">0</text><text x="244" y="32">0</text>
+            <text x="270" y="32">0</text>
+          </g>
+          <text x="0" y="64" font-size="11.5" fill="#57564f" font-family="ui-sans-serif, sans-serif">
+            On the stage that same vector is one tile,
+          </text>
+          <text x="0" y="80" font-size="11.5" fill="#57564f" font-family="ui-sans-serif, sans-serif">
+            read left to right, top to bottom:
+          </text>
+          <g transform="translate(0,92)">
+            <rect x="0" y="0" width="56" height="56" rx="9" fill="#2a78d6" opacity="0.08" stroke="#2a78d6" stroke-opacity="0.45"/>
+            <g>
+              <rect x="7" y="7" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="16.8" y="7" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.85"/>
+              <rect x="26.6" y="7" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="36.4" y="7" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.45"/>
+              <rect x="46.2" y="7" width="2.8" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="7" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="16.8" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.65"/>
+              <rect x="26.6" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="36.4" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
+              <rect x="46.2" y="29.4" width="2.8" height="19.6" rx="1.5" fill="#ddd9cd"/>
+            </g>
+          </g>
+          <text x="72" y="112" font-size="11" fill="#86847a" font-family="ui-sans-serif, sans-serif">
+            filled where the box needs that SKU,
+          </text>
+          <text x="72" y="128" font-size="11" fill="#86847a" font-family="ui-sans-serif, sans-serif">
+            darker where it needs more units
+          </text>
+        </svg>
+        <p>Each box draws two to four SKUs out of <span data-n-skus>14</span>, one to nine units
+           of each, and leaves the rest at zero.</p>
+      </div>
+      <div class="card">
+        <h3>A factory hosts some SKUs</h3>
+        <svg width="100%" height="150" viewBox="0 0 300 150" role="img" aria-label="Factory A cannot host every SKU">
+          <rect x="4" y="16" width="136" height="60" rx="8" fill="none" stroke="#ddd9cd"/>
+          <text x="14" y="36" font-size="12" fill="#16150f" font-family="ui-sans-serif, sans-serif">Factory A</text>
+          <g fill="#2a78d6">
+            <rect x="14" y="46" width="8" height="12" rx="2"/><rect x="26" y="46" width="8" height="12" rx="2"/>
+            <rect x="50" y="46" width="8" height="12" rx="2"/><rect x="62" y="46" width="8" height="12" rx="2"/>
+            <rect x="74" y="46" width="8" height="12" rx="2"/><rect x="86" y="46" width="8" height="12" rx="2"/>
+            <rect x="98" y="46" width="8" height="12" rx="2"/><rect x="110" y="46" width="8" height="12" rx="2"/>
+            <rect x="122" y="46" width="8" height="12" rx="2"/>
+          </g>
+          <rect x="38" y="46" width="8" height="12" rx="2" fill="#ddd9cd"/>
+          <text x="14" y="70" font-size="9" fill="#86847a" font-family="ui-monospace, monospace">SKU 2 not hosted</text>
+          <rect x="160" y="16" width="136" height="60" rx="8" fill="none" stroke="#ddd9cd"/>
+          <text x="170" y="36" font-size="12" fill="#16150f" font-family="ui-sans-serif, sans-serif">Factory B</text>
+          <g fill="#eb6834">
+            <rect x="170" y="46" width="8" height="12" rx="2"/><rect x="182" y="46" width="8" height="12" rx="2"/>
+            <rect x="194" y="46" width="8" height="12" rx="2"/><rect x="206" y="46" width="8" height="12" rx="2"/>
+            <rect x="218" y="46" width="8" height="12" rx="2"/><rect x="230" y="46" width="8" height="12" rx="2"/>
+            <rect x="242" y="46" width="8" height="12" rx="2"/><rect x="254" y="46" width="8" height="12" rx="2"/>
+            <rect x="266" y="46" width="8" height="12" rx="2"/><rect x="278" y="46" width="8" height="12" rx="2"/>
+          </g>
+          <text x="170" y="70" font-size="9" fill="#86847a" font-family="ui-monospace, monospace">hosts everything</text>
+          <g transform="translate(4,92)">
+            <rect x="0" y="0" width="34" height="34" rx="6" fill="#eb6834" opacity="0.1" stroke="#16150f" stroke-width="1.6"/>
+            <text x="46" y="14" font-size="11" fill="#57564f" font-family="ui-sans-serif, sans-serif">
+              a tile outlined in black needs SKU 2,
+            </text>
+            <text x="46" y="29" font-size="11" fill="#57564f" font-family="ui-sans-serif, sans-serif">
+              so it can only ever go to factory B
+            </text>
+          </g>
+        </svg>
+        <p>A factory adds up the vectors of the boxes it holds, and refuses any box needing a
+           SKU it does not host. Both factories always take the same number of boxes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ demo 1: demand ============================ -->
+<section class="walkthrough" id="demand">
+  <div class="wrap">
+    <div class="scrolly">
+      <div class="stage-col">
+        <div class="stage" id="demand-stage">
+          <canvas class="flow"></canvas>
+          <div class="chips" id="demand-chips"></div>
+          <canvas class="sku"></canvas>
+          <canvas class="chart"></canvas>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step" data-layers="boxes">
+          <div class="tag">One</div>
+          <h3>The initial order volume</h3>
+          <p>We start with an initial set of orders. Every tile is a simulated box, and the
+             bars below are how many units of each SKU all those boxes need.</p>
+        </div>
+        <div class="step" data-layers="boxes">
+          <div class="tag">Two</div>
+          <h3>Order volume changes, execution by execution</h3>
+          <p>Keep scrolling. Volume moves in two ways: customers change their orders, and the
+             simulated boxes themselves change between executions. Both alter the mix of SKUs
+             in the next forecast.</p>
+          <p>Every execution before the last is a forecast. The last one is the actual: the
+             volume the factories really pick. The dashed mark on each bar is that actual.</p>
+        </div>
+        <div class="step" data-layers="boxes sku">
+          <div class="tag">Three</div>
+          <h3>Follow one SKU</h3>
+          <p>Pick any SKU with the numbers above the plot. The line is the forecast for it at
+             each execution, and the dashed line is the actual.</p>
+          <p>A bar above the dashed line means the forecast is over; below means under. The bars
+             close to nothing at the last execution, where forecast and actual are the same
+             thing.</p>
+          <p class="math">error = forecast − actual</p>
+        </div>
+        <div class="step" data-layers="boxes sku chart">
+          <div class="tag">Four</div>
+          <h3>Add up every SKU</h3>
+          <p>Take the size of that error for each SKU, ignoring its direction, add them up and
+             divide by the volume the network finally picks. That is a WMAPE — a mean absolute
+             percentage error weighted by volume, so the big SKUs count for more.</p>
+          <p class="math">network WMAPE = Σ<sub>k</sub> |forecast<sub>k</sub> − actual<sub>k</sub>|
+             ÷ Σ<sub>k</sub> actual<sub>k</sub></p>
+          <p>Customer edits and simulated box changes move this line. No routing decision can
+             touch it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ demo 2: routing =========================== -->
+<section class="walkthrough" id="routing">
+  <div class="wrap">
+    <div class="scrolly">
+      <div class="stage-col">
+        <div class="stage" id="routing-stage">
+          <canvas class="flow"></canvas>
+          <div class="chips" id="routing-chips"></div>
+          <canvas class="sku"></canvas>
+          <canvas class="chart"></canvas>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step" data-layers="boxes">
+          <div class="tag">Five</div>
+          <h3>Now split the boxes</h3>
+          <p>The same order volume, divided between two factories. Each takes half the boxes,
+             and a tile outlined in black can only go to factory B.</p>
+          <p>Scroll on and boxes start hopping sides: that is the optimiser holding its target
+             as customers edit orders and simulated boxes change.</p>
+        </div>
+        <div class="step" data-layers="boxes sku">
+          <div class="tag">Six</div>
+          <h3>Follow the same SKU into each factory</h3>
+          <p>Three lines now: the network total, and the same SKU at each factory. The two
+             factory lines always add up to the total.</p>
+          <p>Each has its own dashed finish line, and a bar at every execution showing the
+             distance still to travel.</p>
+          <p class="math">a = forecast A − actual A &nbsp;·&nbsp; b = forecast B − actual B<br>
+             a + b = the network error for this SKU</p>
+        </div>
+        <div class="step" data-layers="boxes sku">
+          <div class="tag">Seven</div>
+          <h3>Do the sum, execution by execution</h3>
+          <p>When both factories forecast the same way — both over their actual, or both under
+             — the split has cost nothing. The network was already that far out.</p>
+          <p>When one is over and the other under, the two errors cancel in the network total
+             yet both factories are wrong. The numbers under the plot do that sum as you
+             scroll.</p>
+          <p class="math">sites wrong by = |a| + |b| &nbsp;·&nbsp; network wrong by = |a + b|<br>
+             the split costs = |a| + |b| − |a + b| = 2 × min(|a|, |b|) when the signs disagree,
+             and nothing when they agree</p>
+        </div>
+        <div class="step" data-layers="boxes sku chart">
+          <div class="tag">Eight</div>
+          <h3>Add up every SKU again</h3>
+          <p>Site error is the same WMAPE, but the sizes are taken per factory before they are
+             added up, so the cancelling never happens. The denominator is unchanged, because the two
+             factories' actuals add up to the network's, which is what makes the two errors
+             directly comparable.</p>
+          <p class="math">site WMAPE = Σ<sub>k</sub> ( |forecast A<sub>k</sub> − actual A<sub>k</sub>|
+             + |forecast B<sub>k</sub> − actual B<sub>k</sub>| ) ÷ Σ<sub>k</sub> actual<sub>k</sub></p>
+          <p>It sits above network error, and the red band between them is that last number on
+             every SKU, added up. Closing the band is the whole game.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== demo 3: targets and constraints ================= -->
+<section class="walkthrough" id="targets">
+  <div class="wrap">
+    <div class="scrolly">
+      <div class="stage-col">
+        <div class="stage solution-stage" id="solution-stage" data-layers="direction">
+          <canvas class="solution" role="img"
+                  aria-label="Illustration of target-setting methods, box coupling, and factory eligibility"></canvas>
+          <div class="solution-key" aria-hidden="true">
+            <span><i class="swatch" style="background:#2a78d6"></i> factory A</span>
+            <span><i class="swatch" style="background:#eb6834"></i> factory B</span>
+            <span><i class="swatch" style="background:#4a3aa7"></i> global volume</span>
+            <span><i class="swatch line" style="background:#b23b32"></i> added site error</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step" data-layers="direction">
+          <div class="tag">Nine</div>
+          <h3>The condition for no added site error</h3>
+          <p>For one SKU, site error equals global error whenever the two factory errors point
+             in the same direction. They may both be over, both be under, or one may be exactly
+             zero. Then nothing cancels when the factories are added together.</p>
+          <p class="math">if a and b have the same sign: |a| + |b| = |a + b|<br>
+             therefore site error = global error</p>
+          <p>So the design problem is clear: set targets that keep the signs aligned as global
+             order volume changes.</p>
+        </div>
+
+        <div class="step" data-layers="fixed">
+          <div class="tag">Ten · method one</div>
+          <h3>Hold one site's SKU volume constant</h3>
+          <p>Keep factory A's volume for this SKU fixed and let factory B absorb every change in
+             global volume. A is always on its own actual, so its error is zero. B's error is the
+             entire global error.</p>
+          <p class="math">A<sub>f</sub> = A<sub>a</sub> ⇒ a = 0<br>
+             b = (G<sub>f</sub> − A<sub>f</sub>) − (G<sub>a</sub> − A<sub>a</sub>)
+             = G<sub>f</sub> − G<sub>a</sub> = ΔG<br>
+             site error = |0| + |ΔG| = |ΔG| = global error</p>
+          <p>This removes added site error for the SKU by construction.</p>
+        </div>
+
+        <div class="step" data-layers="proportional">
+          <div class="tag">Eleven · method two</div>
+          <h3>Keep each site's share constant</h3>
+          <p>Alternatively, keep the SKU split proportional at every execution — for example,
+             40% at factory A and 60% at factory B. Both sites then move with global volume.</p>
+          <p class="math">a = 0.4ΔG &nbsp;·&nbsp; b = 0.6ΔG<br>
+             site error = |0.4ΔG| + |0.6ΔG| = |ΔG| = global error</p>
+          <p>Because both multipliers are non-negative, both errors always take the sign of the
+             same global change. Again, there is no added site error.</p>
+        </div>
+
+        <div class="step" data-layers="bundles">
+          <div class="tag">Twelve · the physical constraint</div>
+          <h3>But SKUs cannot move independently</h3>
+          <p>A target is written one SKU at a time, but routing moves whole boxes. A box bundles
+             several SKUs together, so moving four units of one SKU can also move two other SKUs
+             that were already on target.</p>
+          <p>The optimiser has to hunt for a combination of boxes whose bundled contents land
+             close to every SKU target at once. The exact vector may not exist.</p>
+        </div>
+
+        <div class="step" data-layers="eligibility">
+          <div class="tag">Thirteen · eligibility changes the answer</div>
+          <h3>A changed box may lose a route</h3>
+          <p>Suppose a simulated box changes and now contains a SKU that factory A does not
+             host. That whole box becomes ineligible for A, even if its other SKUs would have
+             made it the perfect move.</p>
+          <p>Customer edits, simulated box changes, equal box-count rules, and site eligibility
+             can therefore make either ideal method impossible in a particular execution.</p>
+        </div>
+
+        <div class="step" data-layers="optimise">
+          <div class="tag">Fourteen · the optimisation problem</div>
+          <h3>The target is a goal, not a guaranteed split</h3>
+          <p>The optimiser must choose whole, eligible boxes while balancing all SKU targets at
+             the same time. Reaching the mathematical ideal is a non-trivial combinatorial
+             problem, and sometimes the best feasible split still leaves added site error.</p>
+          <p>That leaves the practical question for the exercise below: given changing order
+             volume, changing box contents, and routing constraints, what is the best way to set
+             the SKU targets?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== explorer =============================== -->
+<section class="explorer" id="explorer">
+  <div class="wrap">
+    <h2>Beat the baseline</h2>
+    <p class="sub">
+      The optimiser is fixed: equal box counts, eligibility respected, boxes kept whole, and the
+      L1 distance to the target minimised. The only thing you change is how the target is set at
+      each execution. The question is which target rule best survives changing order volume,
+      changing box contents, and the same physical routing constraints.
+    </p>
+
+    <div class="panel-grid">
+      <form class="controls" id="rule-form" onsubmit="return false">
+        <h3>Write your target rule</h3>
+        <p class="hint">Your code runs privately in this browser. It sets the SKU target for
+           factory A; the optimiser still routes whole, eligible boxes.</p>
+
+        <div class="function-contract" aria-label="Strategy function contract">
+          <div><code>skus</code><span>current global SKU volumes</span></div>
+          <div><code>context</code><span>execution number, eligibility, and prior history</span></div>
+          <div><code>return</code><span>one target number per SKU for factory A</span></div>
+        </div>
+
+        <div class="field code-field">
+          <label for="strategy-code">JavaScript strategy</label>
+          <textarea id="strategy-code" name="strategy-code" rows="16" spellcheck="false"
+                    aria-describedby="strategy-help">function setTargets(skus, context) {
+  // skus: [units for SKU 0, SKU 1, ...] now
+  // context.history: earlier { skus, target } values
+  // Return factory A's target vector.
+  return skus.map((units, sku) => {
+    if (!context.hostedAtA[sku]) return 0;
+    return units * 0.5;
+  });
+}</textarea>
+          <p class="desc" id="strategy-help">Define exactly one function named
+             <code>setTargets(skus, context)</code>. It must return an array with
+             <span data-n-skus>14</span> finite numbers. Each execution has a one-second limit.</p>
+        </div>
+
+        <div class="code-actions">
+          <button class="btn ghost" id="copy-prompt" type="button">Copy agent prompt</button>
+          <button class="btn ghost" id="reset-code" type="button">Reset example</button>
+          <button class="btn" id="run" type="button">Run my strategy</button>
+        </div>
+        <div class="copy-note" id="copy-note" aria-live="polite"></div>
+        <div class="status" id="status"></div>
+      </form>
+
+      <div>
+        <div class="scoreboard">
+          <div class="score"><div class="k">Baseline score</div><div class="v" id="baseline-score-2">—</div></div>
+          <div class="score"><div class="k">Your score</div><div class="v" id="your-score">—</div></div>
+          <div class="score verdict"><div class="k">Difference</div><div class="v" id="verdict">—</div>
+            <div class="k" id="verdict-note">run a rule to compare</div></div>
+        </div>
+
+        <div id="lab">
+          <div class="stage" id="lab-stage">
+            <canvas class="flow"></canvas>
+            <canvas class="chart"></canvas>
+            <div class="playbar">
+              <button class="btn ghost" id="animate" type="button">Play</button>
+              <input type="range" id="scrub" min="0" max="1000" value="0">
+              <div class="label" id="scrub-label">execution 1</div>
+            </div>
+          </div>
+
+          <div class="stage tracker" id="sku-tracker" data-layers="sku">
+            <div class="tracker-head">
+              <h3>Follow one SKU</h3>
+              <p>The same plot as the walkthrough, on your rule. Scrub the run above and the
+                 sum underneath follows, execution by execution.</p>
+            </div>
+            <div class="chips" id="lab-chips"></div>
+            <canvas class="sku"></canvas>
+            <div class="legend">
+              <span><i class="swatch" style="background:#2a78d6"></i> factory A</span>
+              <span><i class="swatch" style="background:#eb6834"></i> factory B</span>
+              <span><i class="swatch" style="background:#4a3aa7"></i> all orders</span>
+              <span><i class="swatch line dashed"></i> actual</span>
+              <span><i class="swatch line" style="background:#b23b32"></i> what the split costs</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="results">
+          <thead>
+            <tr><th>Run</th><th>Rule</th><th>Score</th><th>Mean gap</th><th>Max gap</th><th>Boxes moved</th></tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Score is the sum of squared gaps between site error and network error across executions —
+    lower is better. The baseline run is cached in <code>baseline.json</code>; delete that file
+    to rebuild it.
+  </div>
+</footer>
+
+<script src="browser-solver.js"></script>
+<script src="site.js"></script>
+</body>
+</html>
