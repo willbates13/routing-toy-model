@@ -125,18 +125,20 @@ section follows it all the way down.
 
 ## Beating the baseline
 
-The published site includes a browser-based coding challenge. A visitor can paste a JavaScript
-function into the editor and run all twelve executions without a backend. Strategy code runs in
-a short-lived Web Worker with a one-second limit and receives two inputs:
+The published site includes a browser-based coding challenge. A visitor can paste a Python
+function into the editor and run all twelve executions without a backend. Strategy code runs
+through Pyodide in a Web Worker with a two-second per-execution limit and receives two inputs:
 
-```js
-function setTargets(skus, context) {
-  return skus.map((units, sku) => context.hostedAtA[sku] ? units * 0.5 : 0);
-}
+```python
+def set_targets(skus, context):
+    return [
+        units * 0.5 if context["hostedAtA"][sku] else 0
+        for sku, units in enumerate(skus)
+    ]
 ```
 
 - `skus` is the current global SKU-volume vector.
-- `context.history` contains earlier `{ skus, target }` values; the context also includes the
+- `context["history"]` contains earlier `{"skus": [...], "target": [...]}` values; it also includes the
   execution number and both factories' SKU eligibility.
 - The return value is the target SKU-volume vector for factory A.
 
@@ -179,7 +181,7 @@ aoa/rules.py        target rules - the part you change
 aoa/metrics.py      the two error curves and the score
 aoa/experiment.py   run a rule, shape the result, cache the baseline
 aoa/server.py       static page plus two JSON endpoints
-web/                the page: index.html, site.css, site.js, browser-solver.js
+web/                the page: index.html, site.css, experience.js, strategy-runner.js
 tests/              unit tests
 ```
 

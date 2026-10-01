@@ -5,7 +5,7 @@
    each step names the layers it wants. The explorer shows all of them at once,
    with the numbers turned on. */
 
-window.AOA_APP_BUILD = 7;
+window.AOA_APP_BUILD = 9;
 
 const COLORS = {
   ink: "#16150f",
@@ -36,31 +36,30 @@ const pct = (v, dp = 1) => `${(v * 100).toFixed(dp)}%`;
 const errOf = (s, i) => Math.round(s.data[i] - s.final);
 const signedText = (v) => (v > 0 ? `+${v}` : v < 0 ? `-${Math.abs(v)}` : "0");
 
-const AGENT_PROMPT = `You are writing a JavaScript target-setting strategy for an interactive factory-routing challenge.
+const AGENT_PROMPT = `You are writing a Python target-setting strategy for an interactive factory-routing challenge.
 
 The simulation has 14 SKUs, 48 indivisible customer boxes, two factories, and 12 executions. Every box contains several SKUs. Each execution changes the global order volume. Factory A cannot host SKU 2; factory B hosts every SKU. The optimiser must send exactly half the boxes to each factory, keep boxes whole, and respect eligibility.
 
 Your only job is to decide the target SKU-volume vector for factory A. The browser will optimise the box assignment toward that target and score the result. Lower is better. The score is the sum of squared gaps between site WMAPE and global WMAPE across executions. Added site error occurs when the signed forecast errors at the two factories point in opposite directions.
 
-Write exactly one plain JavaScript function with this signature:
+Write exactly one plain Python function with this signature:
 
-function setTargets(skus, context) {
-  // return one finite target number per SKU for factory A
-}
+def set_targets(skus, context):
+    # return one finite target number per SKU for factory A
 
 Inputs:
 - skus: an array of current global units for SKU 0, SKU 1, and so on.
-- context.execution: zero-based execution number.
-- context.nExecutions: total execution count.
-- context.history: earlier executions only, as { skus, target } objects.
-- context.hostedAtA / context.hostedAtB: Boolean eligibility arrays by SKU.
+- context["execution"]: zero-based execution number.
+- context["nExecutions"]: total execution count.
+- context["history"]: earlier executions only, as {"skus": [...], "target": [...]} dictionaries.
+- context["hostedAtA"] / context["hostedAtB"]: Boolean eligibility lists by SKU.
 
 Output:
-- Return an array with exactly the same length as skus. Each number is factory A's target units for that SKU.
+- Return a list with exactly the same length as skus. Each number is factory A's target units for that SKU.
 - Return 0 for any SKU factory A cannot host.
 
 Constraints:
-- Use no imports, network calls, DOM APIs, or external state.
+- Use no external packages, network calls, browser APIs, or external state.
 - The function must finish quickly and be deterministic.
 - Do not include Markdown fences or explanation in your answer—return only the function code, ready to paste.
 
@@ -1312,7 +1311,8 @@ function wireExplorer(stage) {
       if (!window.AOABrowser) throw new Error("The browser solver did not load.");
       const payload = await window.AOABrowser.runCustomStrategy(state.baseline, code.value, {
         lambdaMove: 0.05,
-        label: "Your code",
+        label: "Your Python",
+        onStatus: (message) => (status.textContent = message),
       });
       state.challenger = payload;
       stage.setRun(payload, state.baseline);

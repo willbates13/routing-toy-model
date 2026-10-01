@@ -367,7 +367,7 @@
     <div class="panel-grid">
       <form class="controls" id="rule-form" onsubmit="return false">
         <h3>Write your target rule</h3>
-        <p class="hint">Your code runs privately in this browser. It sets the SKU target for
+        <p class="hint">Your Python runs privately in this browser. It sets the SKU target for
            factory A; the optimiser still routes whole, eligible boxes.</p>
 
         <div class="function-contract" aria-label="Strategy function contract">
@@ -377,20 +377,20 @@
         </div>
 
         <div class="field code-field">
-          <label for="strategy-code">JavaScript strategy</label>
+          <label for="strategy-code">Python strategy</label>
           <textarea id="strategy-code" name="strategy-code" rows="16" spellcheck="false"
-                    aria-describedby="strategy-help">function setTargets(skus, context) {
-  // skus: [units for SKU 0, SKU 1, ...] now
-  // context.history: earlier { skus, target } values
-  // Return factory A's target vector.
-  return skus.map((units, sku) => {
-    if (!context.hostedAtA[sku]) return 0;
-    return units * 0.5;
-  });
-}</textarea>
+                    aria-describedby="strategy-help">def set_targets(skus, context):
+    # skus: [units for SKU 0, SKU 1, ...] now
+    # context["history"]: earlier { skus, target } values
+    # Return factory A's target vector.
+    return [
+        units * 0.5 if context["hostedAtA"][sku] else 0
+        for sku, units in enumerate(skus)
+    ]</textarea>
           <p class="desc" id="strategy-help">Define exactly one function named
-             <code>setTargets(skus, context)</code>. It must return an array with
-             <span data-n-skus>14</span> finite numbers. Each execution has a one-second limit.</p>
+             <code>set_targets(skus, context)</code>. It must return a list with
+             <span data-n-skus>14</span> finite numbers. Each execution has a two-second limit.
+             The first run also downloads the in-browser Python runtime.</p>
         </div>
 
         <div class="code-actions">
@@ -458,7 +458,7 @@
   </div>
 </footer>
 
-<script src="browser-solver.js"></script>
-<script src="site.js"></script>
+<script src="strategy-runner.js"></script>
+<script src="experience.js"></script>
 </body>
 </html>

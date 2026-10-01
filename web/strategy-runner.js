@@ -1,10 +1,10 @@
-/* Browser-only strategy runner used by the GitHub Pages build.
+/* Browser-only Python strategy runner used by the GitHub Pages build.
 
-   A visitor supplies one function:
+   A visitor supplies one Python function:
 
-     function setTargets(skus, context) { return targetForFactoryA; }
+     def set_targets(skus, context): return target_for_factory_a
 
-   The function is evaluated inside a short-lived Web Worker. Routing then uses
+   The function is evaluated by Pyodide inside a Web Worker. Routing then uses
    the same whole-box, equal-count and eligibility constraints as the Python
    model, with the repository's dependency-free improving-swap solver.
 */
@@ -12,9 +12,14 @@
 (function (global) {
   "use strict";
 
-  global.AOA_SOLVER_BUILD = 1;
+  global.AOA_SOLVER_BUILD = 2;
 
-  const STRATEGY_TIMEOUT_MS = 1000;
+  const STRATEGY_TIMEOUT_MS = 2000;
+  const PYTHON_LOAD_TIMEOUT_MS = 60000;
+  let pythonWorker = null;
+  let pythonReady = null;
+  let pythonSequence = 0;
+  const pythonPending = new Map();
 
   const sumVectors = (vectors, n) => {
     const out = Array(n).fill(0);
@@ -27,7 +32,7 @@
 
   function validateTarget(value, nSkus) {
     if (!Array.isArray(value) || value.length !== nSkus) {
-      throw new Error(`setTargets must return an array of ${nSkus} numbers.`);
+      throw new Error(`set_targets must return a list of ${nSkus} numbers.`);
     }
     return value.map((entry, k) => {
       const number = Number(entry);
@@ -36,54 +41,70 @@
     });
   }
 
-  function evaluateStrategy(code, skus, context, timeoutMs = STRATEGY_TIMEOUT_MS) {
-    const workerSource = `
-      "use strict";
-      self.fetch = undefined;
-      self.XMLHttpRequest = undefined;
-      self.WebSocket = undefined;
-      self.importScripts = undefined;
-      self.onmessage = async function (event) {
-        try {
-          const data = event.data;
-          const build = new Function(
-            "\\\"use strict\\\";\\n" + data.code +
-            "\\nif (typeof setTargets !== 'function') { throw new Error('Define function setTargets(skus, context).'); }" +
-            "\\nreturn setTargets;"
-          );
-          const strategy = build();
-          const result = await strategy(data.skus, data.context);
-          self.postMessage({ ok: true, result: result });
-        } catch (error) {
-          self.postMessage({ ok: false, error: error && error.message ? error.message : String(error) });
+  function stopPythonWorker(error) {
+    if (pythonWorker) pythonWorker.terminate();
+    pythonWorker = null;
+    pythonReady = null;
+    for (const pending of pythonPending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+    pythonPending.clear();
+  }
+
+  function ensurePythonWorker(onStatus) {
+    if (pythonReady) return pythonReady;
+    if (onStatus) onStatus("Loading the Python runtime (first run only)...");
+    pythonWorker = new Worker(new URL("python-worker.mjs", window.location.href), { type: "module" });
+    pythonReady = new Promise((resolve, reject) => {
+      const loadTimer = setTimeout(() => {
+        const error = new Error("The Python runtime took too long to load. Check your connection and try again.");
+        stopPythonWorker(error);
+        reject(error);
+      }, PYTHON_LOAD_TIMEOUT_MS);
+
+      pythonWorker.onmessage = (event) => {
+        const message = event.data || {};
+        if (message.type === "ready") {
+          clearTimeout(loadTimer);
+          if (onStatus) onStatus("Python ready. Running your strategy...");
+          resolve(pythonWorker);
+          return;
         }
+        if (message.type !== "result") return;
+        const pending = pythonPending.get(message.id);
+        if (!pending) return;
+        pythonPending.delete(message.id);
+        clearTimeout(pending.timer);
+        if (message.ok) pending.resolve(message.result);
+        else pending.reject(new Error(message.error));
       };
-    `;
+      pythonWorker.onerror = (event) => {
+        clearTimeout(loadTimer);
+        const error = new Error(event.message || "The Python runtime failed to load.");
+        stopPythonWorker(error);
+        reject(error);
+      };
+    });
+    return pythonReady;
+  }
 
+  async function evaluateStrategy(
+    code,
+    skus,
+    context,
+    timeoutMs = STRATEGY_TIMEOUT_MS,
+    onStatus = null
+  ) {
+    const worker = await ensurePythonWorker(onStatus);
+    const id = ++pythonSequence;
     return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
-      const worker = new Worker(url);
-      const finish = () => {
-        worker.terminate();
-        URL.revokeObjectURL(url);
-      };
       const timer = setTimeout(() => {
-        finish();
-        reject(new Error(`Strategy took longer than ${timeoutMs} ms at execution ${context.execution + 1}.`));
+        const error = new Error(`Strategy took longer than ${timeoutMs} ms at execution ${context.execution + 1}.`);
+        stopPythonWorker(error);
       }, timeoutMs);
-
-      worker.onmessage = (event) => {
-        clearTimeout(timer);
-        finish();
-        if (event.data.ok) resolve(event.data.result);
-        else reject(new Error(event.data.error));
-      };
-      worker.onerror = (event) => {
-        clearTimeout(timer);
-        finish();
-        reject(new Error(event.message || "The strategy worker failed."));
-      };
-      worker.postMessage({ code, skus, context });
+      pythonPending.set(id, { resolve, reject, timer });
+      worker.postMessage({ type: "run", id, code, skus, context });
     });
   }
 
@@ -234,7 +255,13 @@
         hostedAtA: hostedA.slice(),
         hostedAtB: hostedB.slice(),
       };
-      const rawTarget = await evaluateStrategy(code, skus.slice(), context, options.timeoutMs);
+      const rawTarget = await evaluateStrategy(
+        code,
+        skus.slice(),
+        context,
+        options.timeoutMs,
+        options.onStatus
+      );
       const requestedTarget = validateTarget(rawTarget, baseline.nSkus);
       const solved = solveAssignment(
         source.boxes,
