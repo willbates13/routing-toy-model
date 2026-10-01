@@ -71,20 +71,20 @@ execution is the actual. Both errors are the forecast measured against that actu
 Both are WMAPEs — absolute error summed across SKUs and divided by actual volume, so the large
 SKUs carry more weight.
 
-- **Network error** — `sum_k |forecast_k - actual_k| / sum_k actual_k` over network volume. It
+- **Global error** — `sum_k |forecast_k - actual_k| / sum_k actual_k` over global volume. It
   depends only on customer churn, so no routing rule can change it. It is the floor.
 - **Site error** — `sum_k (|forecast A_k - actual A_k| + |forecast B_k - actual B_k|) / sum_k actual_k`.
   The same sum, but each factory's miss is taken before the sizes are added. The denominator is
-  unchanged, because the two factories' actuals add up to the network's, so the two errors are
+  unchanged, because the two factories' actuals add up to the global actual, so the two errors are
   directly comparable.
 
 Why they come apart is worth stating precisely. For one SKU, write the signed error at each
-factory as `a = forecast A - actual A` and `b = forecast B - actual B`. The network error for
-that SKU is `a + b`, because the two factories hold the whole network between them.
+factory as `a = forecast A - actual A` and `b = forecast B - actual B`. The global error for
+that SKU is `a + b`, because the two factories hold the whole volume between them.
 
 - Same sign — both factories over their actual, or both under: `|a| + |b| = |a + b|`. Site
-  error equals network error and the split costs nothing.
-- Opposite signs: `|a| + |b| = |a + b| + 2·min(|a|, |b|)`. The two misses cancel in the network
+  error equals global error and the split costs nothing.
+- Opposite signs: `|a| + |b| = |a + b| + 2·min(|a|, |b|)`. The two misses cancel in the global
   total, but both factories are still wrong, and that surplus is pure routing error.
 
 So the gap between the curves is the sign disagreement, summed over SKUs. The follow-one-SKU
@@ -94,7 +94,7 @@ plot shows this arithmetic outright. Under the lines, each execution gets a colu
 A forecast - actual     +8
 B forecast - actual    -24
 sites wrong by           32     <- |a| + |b|
-network wrong by         16     <- |a + b|
+global wrong by          16     <- |a + b|
 the split costs          16     <- the difference, and 2 x min(|a|, |b|)
 ```
 
@@ -102,8 +102,8 @@ Those numbers are for the execution you are on and follow the scroll, so the sum
 execution at a time. The last line greys out while the signs agree and turns red when they do
 not.
 
-Colour is consistent throughout: blue is factory A, orange is factory B, violet is the whole
-network, and red is the cost the split adds.
+Colour is consistent throughout: blue is factory A, orange is factory B, violet is the global
+volume, and red is the cost the split adds.
 
 The score is the sum of squared gaps across the horizon, so **lower is better** and one bad
 execution hurts.
@@ -114,10 +114,10 @@ The walkthrough builds up one layer at a time as you scroll, and each layer is a
 order twice: boxes, then one SKU, then the aggregate.
 
 1. **Demand** — the order book only, no factories. The boxes and their SKU bars; then orders
-   churning; then one SKU's journey; then every SKU added up into network error.
+   churning; then one SKU's journey; then every SKU added up into global error.
 2. **Routing** — the same boxes split between the factories. The split and the box hops; then
    the same SKU at each factory, where the red columns appear; then the aggregate, with site
-   error above network error and the gap between them shaded.
+   error above global error and the gap between them shaded.
 3. **Beat the baseline** — change the target rule, re-run every execution, and compare.
 
 SKU chips are live in all three sections and share one selection, so picking a SKU in the first

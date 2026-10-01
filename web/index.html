@@ -32,7 +32,7 @@
     <p class="lede">
       Every execution is a forecast of what each factory will pick, and the last execution is
       the actual. The factories buy ingredients against the forecast, so if a box hops between
-      sites both of them get it wrong even when the network-wide forecast was fine. That
+      sites both of them get it wrong even when the global forecast was fine. That
       difference is the error this model is about.
     </p>
     <div class="cta">
@@ -191,9 +191,9 @@
           <div class="tag">Four</div>
           <h3>Add up every SKU</h3>
           <p>Take the size of that error for each SKU, ignoring its direction, add them up and
-             divide by the volume the network finally picks. That is a WMAPE — a mean absolute
+             divide by the final global volume. That is a WMAPE — a mean absolute
              percentage error weighted by volume, so the big SKUs count for more.</p>
-          <p class="math">network WMAPE = Σ<sub>k</sub> |forecast<sub>k</sub> − actual<sub>k</sub>|
+          <p class="math">global WMAPE = Σ<sub>k</sub> |forecast<sub>k</sub> − actual<sub>k</sub>|
              ÷ Σ<sub>k</sub> actual<sub>k</sub></p>
           <p>Customer edits and simulated box changes move this line. No routing decision can
              touch it.</p>
@@ -228,22 +228,22 @@
         <div class="step" data-layers="boxes sku">
           <div class="tag">Six</div>
           <h3>Follow the same SKU into each factory</h3>
-          <p>Three lines now: the network total, and the same SKU at each factory. The two
+          <p>Three lines now: the global total, and the same SKU at each factory. The two
              factory lines always add up to the total.</p>
           <p>Each has its own dashed finish line, and a bar at every execution showing the
              distance still to travel.</p>
           <p class="math">a = forecast A − actual A &nbsp;·&nbsp; b = forecast B − actual B<br>
-             a + b = the network error for this SKU</p>
+             a + b = the global error for this SKU</p>
         </div>
         <div class="step" data-layers="boxes sku">
           <div class="tag">Seven</div>
           <h3>Do the sum, execution by execution</h3>
           <p>When both factories forecast the same way — both over their actual, or both under
-             — the split has cost nothing. The network was already that far out.</p>
-          <p>When one is over and the other under, the two errors cancel in the network total
+             — the split has cost nothing. The global forecast was already that far out.</p>
+          <p>When one is over and the other under, the two errors cancel in the global total
              yet both factories are wrong. The numbers under the plot do that sum as you
              scroll.</p>
-          <p class="math">sites wrong by = |a| + |b| &nbsp;·&nbsp; network wrong by = |a + b|<br>
+          <p class="math">sites wrong by = |a| + |b| &nbsp;·&nbsp; global wrong by = |a + b|<br>
              the split costs = |a| + |b| − |a + b| = 2 × min(|a|, |b|) when the signs disagree,
              and nothing when they agree</p>
         </div>
@@ -252,11 +252,11 @@
           <h3>Add up every SKU again</h3>
           <p>Site error is the same WMAPE, but the sizes are taken per factory before they are
              added up, so the cancelling never happens. The denominator is unchanged, because the two
-             factories' actuals add up to the network's, which is what makes the two errors
+             factories' actuals add up to the global actual, which is what makes the two errors
              directly comparable.</p>
           <p class="math">site WMAPE = Σ<sub>k</sub> ( |forecast A<sub>k</sub> − actual A<sub>k</sub>|
              + |forecast B<sub>k</sub> − actual B<sub>k</sub>| ) ÷ Σ<sub>k</sub> actual<sub>k</sub></p>
-          <p>It sits above network error, and the red band between them is that last number on
+          <p>It sits above global error, and the red band between them is that last number on
              every SKU, added up. Closing the band is the whole game.</p>
         </div>
       </div>
@@ -300,6 +300,9 @@
           <p>Keep factory A's volume for this SKU fixed and let factory B absorb every change in
              global volume. A is always on its own actual, so its error is zero. B's error is the
              entire global error.</p>
+          <p>In the upper plot, A is the flat blue line while B moves with the purple global
+             line. In the lower plot, site error lies exactly on global error at every execution,
+             so there is no red gap between them.</p>
           <p class="math">A<sub>f</sub> = A<sub>a</sub> ⇒ a = 0<br>
              b = (G<sub>f</sub> − A<sub>f</sub>) − (G<sub>a</sub> − A<sub>a</sub>)
              = G<sub>f</sub> − G<sub>a</sub> = ΔG<br>
@@ -312,6 +315,9 @@
           <h3>Keep each site's share constant</h3>
           <p>Alternatively, keep the SKU split proportional at every execution — for example,
              40% at factory A and 60% at factory B. Both sites then move with global volume.</p>
+          <p>In the upper plot, both factory lines rise and fall with the purple global line. In
+             the lower plot, site error and global error overlap again: each site carries the
+             same sign as the global change, so the added site error stays at zero.</p>
           <p class="math">a = 0.4ΔG &nbsp;·&nbsp; b = 0.6ΔG<br>
              site error = |0.4ΔG| + |0.6ΔG| = |ΔG| = global error</p>
           <p>Because both multipliers are non-negative, both errors always take the sign of the
@@ -452,13 +458,13 @@
 
 <footer>
   <div class="wrap">
-    Score is the sum of squared gaps between site error and network error across executions —
+    Score is the sum of squared gaps between site error and global error across executions —
     lower is better. The baseline run is cached in <code>baseline.json</code>; delete that file
     to rebuild it.
   </div>
 </footer>
 
 <script src="strategy-runner.js?v=2"></script>
-<script src="experience.js?v=11"></script>
+<script src="experience.js?v=12"></script>
 </body>
 </html>

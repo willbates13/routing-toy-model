@@ -5,7 +5,7 @@
    each step names the layers it wants. The explorer shows all of them at once,
    with the numbers turned on. */
 
-window.AOA_APP_BUILD = 11;
+window.AOA_APP_BUILD = 12;
 
 const COLORS = {
   ink: "#16150f",
@@ -101,7 +101,7 @@ class Stage {
   constructor(root, { mode = "split", skuMode = "sites", values = false, layers = "boxes sku chart" } = {}) {
     this.root = root;
     this.mode = mode; // "pool" = the order book, "split" = the two factories
-    this.skuMode = skuMode; // "global" = network total, "sites" = per factory
+    this.skuMode = skuMode; // "global" = global total, "sites" = per factory
     this.values = values; // print numbers, or stay purely visual
     this.canvas = root.querySelector("canvas.flow");
     this.chart = root.querySelector("canvas.chart");
@@ -448,7 +448,7 @@ class Stage {
      that SKU ends up - and a column at every execution showing how far off it
      is. The strip underneath does the arithmetic: the two signed errors, their
      absolute sum (what the sites are wrong by) and the absolute sum of the two
-     signed errors (what the network is wrong by). The two agree while the signs
+     signed errors (what the global volume is wrong by). The two agree while the signs
      agree; when they clash the site row runs ahead, and that difference is the
      cost of the split. */
   drawSkuPanel() {
@@ -500,7 +500,7 @@ class Stage {
             get: (i) => `${Math.abs(errOf(series[1], i)) + Math.abs(errOf(series[2], i))}`,
           },
           {
-            label: "network wrong by",
+            label: "global wrong by",
             color: COLORS.net,
             strong: true,
             get: (i) => `${Math.abs(errOf(series[1], i) + errOf(series[2], i))}`,
@@ -677,7 +677,7 @@ class Stage {
         });
       }
     }
-    lines.push({ data: this.run.globalWmape, color: COLORS.net, label: "Network error", dash: split });
+    lines.push({ data: this.run.globalWmape, color: COLORS.net, label: "Global error", dash: split });
 
     const n = this.run.globalWmape.length;
     const m = { l: 42, r: 124, t: 14, b: 22 };
@@ -703,7 +703,7 @@ class Stage {
     }
     ctx.textAlign = "left";
 
-    // the gap between site error and network error is the routing cost
+    // the gap between site error and global error is the routing cost
     if (split && !this.compare) {
       ctx.beginPath();
       this.run.siteWmape.forEach((v, i) => (i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))));
@@ -969,49 +969,136 @@ class SolutionStage {
   }
 
   drawFixed() {
-    this.heading("method one", "Anchor one site; let the other follow global volume");
-    const x = 34;
-    const w = this.w - 68;
-    const y = 100;
-    this.stackedBar(x, y, w * 0.78, 100, 40, "ACTUAL");
-    this.stackedBar(x, y + 105, w * 0.78, 120, 40, "FORECAST");
-    this.text("Factory A stays fixed at 40", x, y + 186, { color: COLORS.A, size: 12, family: MONO, weight: 600 });
-    this.text("Factory B absorbs the +20 global change", x, y + 209, { color: COLORS.B, size: 12, family: MONO, weight: 600 });
-    const cardY = Math.min(this.h - 156, y + 255);
-    this.panel(x, cardY, w, 112);
-    const thirds = w / 3;
-    [["A error", "0", COLORS.A], ["B error", "+20", COLORS.B], ["Global error", "+20", COLORS.net]].forEach(([label, value, color], i) => {
-      const cx = x + thirds * i + thirds / 2;
-      this.text(label, cx, cardY + 31, { color: COLORS.muted, size: 10, family: MONO, align: "center" });
-      this.text(value, cx, cardY + 66, { color, size: 25, family: SERIF, weight: 500, align: "center" });
-      if (i < 2) {
-        this.ctx.strokeStyle = COLORS.lineSoft;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x + thirds * (i + 1), cardY + 18);
-        this.ctx.lineTo(x + thirds * (i + 1), cardY + 92);
-        this.ctx.stroke();
-      }
-    });
-    this.pill("|0| + |20| = |20|", Math.max(20, (this.w - 220) / 2), this.h - 38, Math.min(220, this.w - 40), COLORS.good);
+    this.drawTargetMethod("fixed");
   }
 
   drawProportional() {
-    this.heading("method two", "Keep a constant 40 / 60 split at both sites");
-    const x = 34;
-    const w = this.w - 68;
-    const y = 100;
-    this.stackedBar(x, y, w * 0.78, 100, 40, "ACTUAL · 40% / 60%");
-    this.stackedBar(x, y + 105, w * 0.78, 120, 48, "FORECAST · 40% / 60%");
-    const cardY = Math.min(this.h - 170, y + 245);
-    this.panel(x, cardY, w, 126);
-    const thirds = w / 3;
-    [["A follows 40%", "+8", COLORS.A], ["B follows 60%", "+12", COLORS.B], ["Global change", "+20", COLORS.net]].forEach(([label, value, color], i) => {
-      const cx = x + thirds * i + thirds / 2;
-      this.text(label, cx, cardY + 32, { color: COLORS.muted, size: 10, family: MONO, align: "center" });
-      this.arrow(cx - 28, cardY + 76, cx + 18, cardY + 76, color, 4);
-      this.text(value, cx + 28, cardY + 80, { color, size: 14, family: MONO, weight: 600 });
+    this.drawTargetMethod("proportional");
+  }
+
+  drawTargetMethod(method) {
+    const ctx = this.ctx;
+    const fixed = method === "fixed";
+    const global = [104, 96, 112, 101, 119, 108, 126, 116, 132, 121, 114, 110];
+    const actualGlobal = global[global.length - 1];
+    const a = fixed ? global.map(() => 44) : global.map((value) => value * 0.4);
+    const b = global.map((value, i) => value - a[i]);
+    const actualA = a[a.length - 1];
+    const actualB = b[b.length - 1];
+    const globalError = global.map((value) => Math.abs(value - actualGlobal));
+    const siteError = global.map((_, i) => Math.abs(a[i] - actualA) + Math.abs(b[i] - actualB));
+
+    this.canvas.setAttribute(
+      "aria-label",
+      fixed
+        ? "Line plots for one SKU when factory A stays constant: factory volumes across twelve executions, followed by identical site and global error curves with zero added site error."
+        : "Line plots for one SKU with a constant forty-sixty split: factory volumes across twelve executions, followed by identical site and global error curves with zero added site error."
+    );
+    this.heading(
+      fixed ? "method one · one SKU through time" : "method two · one SKU through time",
+      fixed ? "Factory A stays constant; B follows global" : "Both sites keep the same 40 / 60 split"
+    );
+
+    const m = { l: 44, r: this.w < 480 ? 82 : 112 };
+    const plotW = Math.max(80, this.w - m.l - m.r);
+    const x = (i) => m.l + (plotW * i) / (global.length - 1);
+    const topY = 88;
+    const topH = Math.min(210, this.h * 0.36);
+    const maxUnits = 145;
+    const unitY = (value) => topY + topH - (value / maxUnits) * topH;
+    const line = (values, color, width = 2, dash = []) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      values.forEach((value, i) => (i ? ctx.lineTo(x(i), unitY(value)) : ctx.moveTo(x(i), unitY(value))));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      values.forEach((value, i) => {
+        ctx.beginPath();
+        ctx.arc(x(i), unitY(value), width > 2 ? 3.2 : 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    };
+
+    this.text("SKU 0 volume", m.l, topY - 12, { color: COLORS.muted, size: 10, family: MONO, weight: 600 });
+    ctx.strokeStyle = COLORS.lineSoft;
+    ctx.lineWidth = 1;
+    [0, 50, 100, 150].forEach((value) => {
+      const y = unitY(Math.min(value, maxUnits));
+      ctx.beginPath();
+      ctx.moveTo(m.l, y);
+      ctx.lineTo(m.l + plotW, y);
+      ctx.stroke();
+      this.text(`${value}`, m.l - 8, y + 3, { color: COLORS.muted, size: 9.5, family: MONO, align: "right" });
     });
-    this.pill("|8| + |12| = |20|", Math.max(20, (this.w - 230) / 2), this.h - 38, Math.min(230, this.w - 40), COLORS.good);
+    [[actualGlobal, COLORS.net], [actualA, COLORS.A], [actualB, COLORS.B]].forEach(([value, color]) => {
+      ctx.strokeStyle = hexToRgba(color, 0.28);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(m.l, unitY(value));
+      ctx.lineTo(m.l + plotW, unitY(value));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    line(global, COLORS.net, 1.7);
+    line(a, COLORS.A, 2.5);
+    line(b, COLORS.B, 2.5);
+    [
+      [global[global.length - 1], "Global", COLORS.net],
+      [a[a.length - 1], fixed ? "A · fixed" : "A · 40%", COLORS.A],
+      [b[b.length - 1], fixed ? "B · follows" : "B · 60%", COLORS.B],
+    ].forEach(([value, label, color]) =>
+      this.text(label, m.l + plotW + 8, unitY(value) + 4, { color, size: this.w < 480 ? 9.5 : 11, family: SANS })
+    );
+
+    const errorTop = topY + topH + 61;
+    const errorH = Math.max(72, this.h - errorTop - 43);
+    const maxError = Math.max(...globalError, 1) * 1.18;
+    const errorY = (value) => errorTop + errorH - (value / maxError) * errorH;
+    this.text("absolute error for this SKU", m.l, errorTop - 17, { color: COLORS.muted, size: 10, family: MONO, weight: 600 });
+    this.text("added site error = 0 throughout", m.l + plotW, errorTop - 17, {
+      color: COLORS.good, size: 10, family: MONO, weight: 600, align: "right",
+    });
+    [0, maxError].forEach((value) => {
+      const y = errorY(value);
+      ctx.strokeStyle = COLORS.lineSoft;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(m.l, y);
+      ctx.lineTo(m.l + plotW, y);
+      ctx.stroke();
+      this.text(`${Math.round(value)}`, m.l - 8, y + 3, { color: COLORS.muted, size: 9.5, family: MONO, align: "right" });
+    });
+    const errorLine = (values, color, width, dash) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      values.forEach((value, i) => (i ? ctx.lineTo(x(i), errorY(value)) : ctx.moveTo(x(i), errorY(value))));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    errorLine(globalError, COLORS.net, 4, []);
+    errorLine(siteError, COLORS.site, 2, [5, 4]);
+    globalError.forEach((value, i) => {
+      ctx.beginPath();
+      ctx.arc(x(i), errorY(value), 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.net;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x(i), errorY(siteError[i]), 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.site;
+      ctx.fill();
+    });
+    this.text("site error", m.l + plotW + 8, errorY(siteError[siteError.length - 1]) - 7, { color: COLORS.site, size: 10.5 });
+    this.text("global error", m.l + plotW + 8, errorY(globalError[globalError.length - 1]) + 10, { color: COLORS.net, size: 10.5 });
+    [0, 5, 11].forEach((i) => this.text(`${i + 1}`, x(i), this.h - 22, {
+      color: COLORS.muted, size: 9.5, family: MONO, align: "center",
+    }));
+    this.text("execution", m.l + plotW / 2, this.h - 6, { color: COLORS.muted, size: 10, family: MONO, align: "center" });
   }
 
   drawBundles() {
