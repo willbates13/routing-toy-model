@@ -5,7 +5,7 @@
    each step names the layers it wants. The explorer shows all of them at once,
    with the numbers turned on. */
 
-window.AOA_APP_BUILD = 9;
+window.AOA_APP_BUILD = 11;
 
 const COLORS = {
   ink: "#16150f",
@@ -61,7 +61,11 @@ Output:
 Constraints:
 - Use no external packages, network calls, browser APIs, or external state.
 - The function must finish quickly and be deterministic.
-- Do not include Markdown fences or explanation in your answer—return only the function code, ready to paste.
+
+Required answer format:
+- Return exactly one Markdown code block labelled python.
+- Put the complete, paste-ready set_targets function inside that block.
+- Do not include any explanation or text outside the Python code block.
 
 My idea for the strategy:
 [DESCRIBE YOUR IDEA HERE]`;
