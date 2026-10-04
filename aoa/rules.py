@@ -6,9 +6,8 @@ the same, so any improvement over the baseline comes from a better target.
 Modes
 -----
 fixed         target_k = share_k * total_k(first execution), then frozen.
-              This is the baseline in the notebook: the first execution sets the
-              objective and every later execution optimises against it.
 proportional  target_k = share_k * total_k(this execution). Tracks demand drift.
+              This is the baseline: a live 50/50 target that moves with volume.
 affine        target_k = anchor_k + share_k * (total_k(now) - total_k(anchor)).
               Keeps the first split and passes only a share of the change on.
 blend         a weighted mix of the frozen and proportional targets.
@@ -56,7 +55,8 @@ class TargetRule:
 
 
 BASELINE_RULE = TargetRule(
-    mode="fixed", share=0.5, blend=1.0, lambda_move=0.05, label="Baseline"
+    mode="proportional", share=0.5, blend=0.0, lambda_move=0.05,
+    label="Baseline (live 50/50)"
 )
 
 

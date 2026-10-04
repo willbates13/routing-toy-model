@@ -77,10 +77,11 @@ class TestRules(unittest.TestCase):
         self.assertEqual(shares[0], 0.5)
 
     def test_frozen_target_does_not_move(self):
+        rule = TargetRule(mode="fixed", share=0.5)
         state = {"frozen_target": None, "anchor_totals": None}
         hosted_A, hosted_B = list(SMALL.hosted_skus_A), list(SMALL.hosted_skus_B)
-        first = targets_for_execution(BASELINE_RULE, state, [10] * 10, hosted_A, hosted_B)
-        second = targets_for_execution(BASELINE_RULE, state, [40] * 10, hosted_A, hosted_B)
+        first = targets_for_execution(rule, state, [10] * 10, hosted_A, hosted_B)
+        second = targets_for_execution(rule, state, [40] * 10, hosted_A, hosted_B)
         self.assertEqual(first, second)
 
     def test_proportional_target_follows_demand(self):
@@ -90,6 +91,10 @@ class TestRules(unittest.TestCase):
         targets_for_execution(rule, state, [10] * 10, hosted_A, hosted_B)
         later = targets_for_execution(rule, state, [40] * 10, hosted_A, hosted_B)
         self.assertEqual(later[0], 20.0)
+
+    def test_baseline_is_live_fifty_fifty(self):
+        self.assertEqual(BASELINE_RULE.mode, "proportional")
+        self.assertEqual(BASELINE_RULE.share, 0.5)
 
 
 class TestSignClash(unittest.TestCase):

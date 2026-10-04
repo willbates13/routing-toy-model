@@ -235,6 +235,35 @@ table.results th:first-child, table.results td:first-child { text-align: left; }
 table.results th { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 table.results td.num { font-family: var(--mono); }
 
+/* ---------- honour-system leaderboard ---------- */
+.leaderboard {
+  margin-top: 58px; padding-top: 42px; border-top: 1px solid var(--line);
+}
+.leaderboard-head {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 430px);
+  gap: 32px; align-items: end;
+}
+.leaderboard .tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.leaderboard h3 { font-size: 27px; margin: 0 0 6px; }
+.leaderboard-head p { margin: 0; color: var(--text-secondary); max-width: 55ch; }
+.leaderboard-form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.leaderboard-form > div { display: flex; gap: 8px; }
+.leaderboard-form input {
+  min-width: 0; flex: 1; font: inherit; padding: 9px 12px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--surface-1); color: var(--ink);
+}
+.leaderboard-form .btn { flex: 0 0 auto; padding: 9px 18px; }
+.leaderboard-status { min-height: 22px; margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+.leaderboard-status.err { color: var(--bad); }
+.leaderboard-table { margin-top: 18px; }
+.leaderboard-table tr.is-baseline td { color: var(--muted); border-top: 1px solid var(--line); }
+.leaderboard-table td:first-child { width: 72px; font-family: var(--mono); }
+.leaderboard-table td:nth-child(3) { font-family: var(--mono); }
+.leaderboard-table td:nth-child(4) { color: var(--muted); }
+
 footer { border-top: 1px solid var(--line); padding: 28px 0 60px; color: var(--muted); font-size: 13.5px; }
 
 @media (max-width: 960px) {
@@ -246,4 +275,11 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 60px; color: var(--m
   .hud { grid-template-columns: repeat(2, 1fr); }
   .solution-stage canvas.solution { min-height: 440px; }
   .code-field textarea { min-height: 270px; }
+  .leaderboard-head { grid-template-columns: 1fr; align-items: start; }
+}
+
+@media (max-width: 560px) {
+  .leaderboard-form > div { align-items: stretch; flex-direction: column; }
+  .leaderboard-form .btn { width: 100%; }
+  .leaderboard-table-wrap { overflow-x: auto; }
 }

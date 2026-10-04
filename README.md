@@ -34,7 +34,7 @@ default path is the exact solver.
 |---|---|
 | `Box` | A vector of SKU quantities - two to four of the fourteen SKUs carry one to nine units, the rest are zero. A box goes to exactly one factory. |
 | `Site` | A factory. Adds up the vectors it holds, and refuses any box needing a SKU it does not host. |
-| Execution | One routing run over the current order book. Between executions eight orders churn. |
+| Execution | One routing run over the current order volume. Between executions eight orders churn. |
 
 Factory A does not host SKU 2, so every box needing it is stuck at factory B. Both factories
 always take the same number of boxes.
@@ -48,7 +48,8 @@ min  sum_k |A_k - target_k|  +  lambda_move * (boxes that changed site)
 ```
 
 subject to equal box counts, eligibility, and whole boxes. That is a mixed-integer program,
-solved to proven optimality with CBC through PuLP. The optimiser never changes — the target does.
+solved to proven optimality with CBC through PuLP on the local server and HiGHS WebAssembly in
+the published browser experience. The optimiser never changes — the target does.
 
 Two details keep it quick. Everything is scaled to whole numbers, so the objective is integral
 and CBC can round its bound up and prune instead of chasing fractions; and CBC gets several
@@ -56,9 +57,9 @@ threads. A full twelve-execution run takes a few seconds.
 
 ## The baseline
 
-The first execution sets the objective: half of each SKU's demand goes to factory A, and that
-target vector is then frozen. Every later execution is optimised against those same numbers,
-which is exactly the routing behaviour the notebook studies.
+Every execution targets half of the current global SKU volume at factory A. The target therefore
+moves live with the orders; eligibility still forces SKU 2's target at A to zero. This Live 50/50
+rule is the score to beat.
 
 The baseline run is computed once and cached in `baseline.json`. Delete that file to rebuild it,
 for example after changing the scenario.
@@ -113,7 +114,7 @@ execution hurts.
 The walkthrough builds up one layer at a time as you scroll, and each layer is added in the same
 order twice: boxes, then one SKU, then the aggregate.
 
-1. **Demand** — the order book only, no factories. The boxes and their SKU bars; then orders
+1. **Demand** — the order volume only, no factories. The boxes and their SKU bars; then orders
    churning; then one SKU's journey; then every SKU added up into global error.
 2. **Routing** — the same boxes split between the factories. The split and the box hops; then
    the same SKU at each factory, where the red columns appear; then the aggregate, with site
@@ -142,9 +143,23 @@ def set_targets(skus, context):
   execution number and both factories' SKU eligibility.
 - The return value is the target SKU-volume vector for factory A.
 
-The browser uses the same whole-box, equal-count and eligibility constraints as the Python model,
-with the dependency-free improving-swap solver. The baseline remains the exact cached CBC run.
+The browser uses the same whole-box, equal-count and eligibility constraints as the Python model.
+HiGHS 1.15.3 runs the MILP in a Web Worker and a result is accepted only when the solver reports
+it as optimal. The cached Live 50/50 baseline was generated with that same solver version.
 The **Copy agent prompt** button gives an AI coding agent the full contract and scoring objective.
+
+## Honour-system leaderboard
+
+The page includes a simple leaderboard. Without configuration it uses local browser storage for
+previewing. To make it shared:
+
+1. Create a Supabase project and run `supabase/leaderboard.sql` in its SQL editor.
+2. Put the project URL and **publishable** key in `web/leaderboard-config.js`.
+3. Never put a secret or service-role key in the repository.
+
+The table is publicly readable and accepts scores below the versioned baseline. It deliberately
+does not verify strategy code; it is an honour-system board, and only the best score for each
+display name is shown.
 
 ## Publishing
 
@@ -158,8 +173,8 @@ For local development, `./run.sh` still starts the Python server and exact solve
 
 | Rule | Target for SKU *k* |
 |---|---|
-| Frozen | `share × total_k` at the first execution, then never moves. This is the baseline. |
-| Proportional | `share × total_k` at this execution. Follows demand as it drifts. |
+| Frozen | `share × total_k` at the first execution, then never moves. |
+| Proportional | `share × total_k` at this execution. Follows demand as it drifts. This is the Live 50/50 baseline. |
 | Affine | first split, plus `share ×` the change in demand since. |
 | Blend | a weighted mix of the frozen and proportional targets. |
 
@@ -181,7 +196,8 @@ aoa/rules.py        target rules - the part you change
 aoa/metrics.py      the two error curves and the score
 aoa/experiment.py   run a rule, shape the result, cache the baseline
 aoa/server.py       static page plus two JSON endpoints
-web/                the page: index.html, site.css, experience.js, strategy-runner.js
+web/                the page, Python worker, HiGHS worker, and leaderboard client
+supabase/            one-time SQL setup for the shared honour-system leaderboard
 tests/              unit tests
 ```
 

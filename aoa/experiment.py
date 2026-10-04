@@ -1,5 +1,5 @@
 """Run a target rule over the whole execution stream and shape the result for
-the web page. Also owns the frozen baseline everyone is measured against.
+the web page. Also owns the live 50/50 baseline everyone is measured against.
 """
 
 import json
@@ -94,10 +94,10 @@ def _site_summary(site):
 
 
 def get_baseline(scenario, time_limit_s=10, cache_path=BASELINE_PATH, refresh=False):
-    """The frozen reference run. Computed once, then read from disk.
+    """The live 50/50 reference run. Computed once, then read from disk.
 
-    The first execution sets site A's SKU objective; every later execution is
-    optimised against that same objective. This is the number to beat.
+    Every execution targets half of the current global volume at site A, with
+    eligibility overriding that share. This is the number to beat.
     """
     key = scenario.config.key()
     if not refresh and os.path.exists(cache_path):

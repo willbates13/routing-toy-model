@@ -6,20 +6,26 @@
 
    The function is evaluated by Pyodide inside a Web Worker. Routing then uses
    the same whole-box, equal-count and eligibility constraints as the Python
-   model, with the repository's dependency-free improving-swap solver.
+   model, solved to optimality by HiGHS compiled to WebAssembly.
 */
 
 (function (global) {
   "use strict";
 
-  global.AOA_SOLVER_BUILD = 2;
+  global.AOA_SOLVER_BUILD = 3;
 
   const STRATEGY_TIMEOUT_MS = 2000;
   const PYTHON_LOAD_TIMEOUT_MS = 60000;
+  const SOLVER_LOAD_TIMEOUT_MS = 60000;
+  const SOLVE_TIMEOUT_MS = 15000;
   let pythonWorker = null;
   let pythonReady = null;
   let pythonSequence = 0;
   const pythonPending = new Map();
+  let solverWorker = null;
+  let solverReady = null;
+  let solverSequence = 0;
+  const solverPending = new Map();
 
   const sumVectors = (vectors, n) => {
     const out = Array(n).fill(0);
@@ -108,6 +114,54 @@
     });
   }
 
+  function stopSolverWorker(error) {
+    if (solverWorker) solverWorker.terminate();
+    solverWorker = null;
+    solverReady = null;
+    for (const pending of solverPending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+    solverPending.clear();
+  }
+
+  function ensureSolverWorker(onStatus) {
+    if (solverReady) return solverReady;
+    if (onStatus) onStatus("Loading the exact optimiser (first run only)...");
+    solverWorker = new Worker(new URL("highs-worker.mjs", window.location.href), { type: "module" });
+    solverReady = new Promise((resolve, reject) => {
+      const loadTimer = setTimeout(() => {
+        const error = new Error("The exact optimiser took too long to load. Check your connection and try again.");
+        stopSolverWorker(error);
+        reject(error);
+      }, SOLVER_LOAD_TIMEOUT_MS);
+
+      solverWorker.onmessage = (event) => {
+        const message = event.data || {};
+        if (message.type === "ready") {
+          clearTimeout(loadTimer);
+          if (onStatus) onStatus("Exact optimiser ready. Routing the boxes...");
+          resolve(solverWorker);
+          return;
+        }
+        if (message.type !== "result") return;
+        const pending = solverPending.get(message.id);
+        if (!pending) return;
+        solverPending.delete(message.id);
+        clearTimeout(pending.timer);
+        if (message.ok) pending.resolve(message);
+        else pending.reject(new Error(message.error));
+      };
+      solverWorker.onerror = (event) => {
+        clearTimeout(loadTimer);
+        const error = new Error(event.message || "The exact optimiser failed to load.");
+        stopSolverWorker(error);
+        reject(error);
+      };
+    });
+    return solverReady;
+  }
+
   function buildExecutionData(boxes, hostedA, hostedB) {
     const n = boxes.length;
     const nSkus = hostedA.length;
@@ -153,6 +207,47 @@
       (count, box, i) => count + (previousAIds.has(box.id) !== toA[i] ? 1 : 0),
       0
     );
+  }
+
+  async function solveAssignmentExact(
+    boxes,
+    requestedTarget,
+    hostedA,
+    hostedB,
+    previousAIds,
+    lambdaMove,
+    onStatus = null
+  ) {
+    const data = buildExecutionData(boxes, hostedA, hostedB);
+    const target = requestedTarget.map((v, k) =>
+      Math.min(Math.max(Number(v), data.lowerA[k]), data.upperA[k])
+    );
+    const worker = await ensureSolverWorker(onStatus);
+    const id = ++solverSequence;
+    const result = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const error = new Error("The exact optimiser took longer than 15 seconds.");
+        stopSolverWorker(error);
+      }, SOLVE_TIMEOUT_MS);
+      solverPending.set(id, { resolve, reject, timer });
+      worker.postMessage({
+        type: "solve",
+        id,
+        problem: {
+          boxes,
+          target,
+          eligibleA: data.eligibleA,
+          eligibleB: data.eligibleB,
+          previousAIds: [...previousAIds],
+          lambdaMove,
+        },
+      });
+    });
+    const aTotals = sumVectors(
+      boxes.filter((_, i) => result.toA[i]).map((box) => box.skus),
+      data.nSkus
+    );
+    return { toA: result.toA, target, aTotals, status: result.status, objective: result.objective };
   }
 
   function solveAssignment(boxes, requestedTarget, hostedA, hostedB, previousAIds, lambdaMove) {
@@ -263,13 +358,14 @@
         options.onStatus
       );
       const requestedTarget = validateTarget(rawTarget, baseline.nSkus);
-      const solved = solveAssignment(
+      const solved = await solveAssignmentExact(
         source.boxes,
         requestedTarget,
         hostedA,
         hostedB,
         previousAIds,
-        lambdaMove
+        lambdaMove,
+        options.onStatus
       );
       const inA = new Set(source.boxes.filter((_, boxIndex) => solved.toA[boxIndex]).map((box) => box.id));
       const siteA = solved.aTotals.slice();
@@ -319,6 +415,7 @@
     evaluateStrategy,
     runCustomStrategy,
     solveAssignment,
+    solveAssignmentExact,
     validateTarget,
   };
 
