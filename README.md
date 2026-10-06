@@ -148,19 +148,6 @@ HiGHS 1.15.3 runs the MILP in a Web Worker and a result is accepted only when th
 it as optimal. The cached Live 50/50 baseline was generated with that same solver version.
 The **Copy agent prompt** button gives an AI coding agent the full contract and scoring objective.
 
-## Honour-system leaderboard
-
-The page includes a simple leaderboard. Without configuration it uses local browser storage for
-previewing. To make it shared:
-
-1. Create a Supabase project and run `supabase/leaderboard.sql` in its SQL editor.
-2. Put the project URL and **publishable** key in `web/leaderboard-config.js`.
-3. Never put a secret or service-role key in the repository.
-
-The table is publicly readable and accepts scores below the versioned baseline. It deliberately
-does not verify strategy code; it is an honour-system board, and only the best score for each
-display name is shown.
-
 ## Publishing
 
 Every push to `main` publishes the `web/` directory through GitHub Pages. The workflow copies the
@@ -196,8 +183,7 @@ aoa/rules.py        target rules - the part you change
 aoa/metrics.py      the two error curves and the score
 aoa/experiment.py   run a rule, shape the result, cache the baseline
 aoa/server.py       static page plus two JSON endpoints
-web/                the page, Python worker, HiGHS worker, and leaderboard client
-supabase/            one-time SQL setup for the shared honour-system leaderboard
+web/                the page, Python worker, and HiGHS worker
 tests/              unit tests
 ```
 

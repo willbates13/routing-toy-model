@@ -5,7 +5,7 @@
    each step names the layers it wants. The explorer shows all of them at once,
    with the numbers turned on. */
 
-window.AOA_APP_BUILD = 14;
+window.AOA_APP_BUILD = 15;
 
 const COLORS = {
   ink: "#16150f",
@@ -1204,162 +1204,11 @@ class SolutionStage {
 
 /* ------------------------------------------------------------ page wiring */
 
-const LEADERBOARD_SCENARIO = "live-50-highs-1.15.3-v1";
-const LOCAL_LEADERBOARD_KEY = `aoa-leaderboard:${LEADERBOARD_SCENARIO}`;
 const state = { baseline: null, challenger: null, sku: 0, stages: [], chipSets: [] };
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function leaderboardConfig() {
-  const config = window.AOA_LEADERBOARD || {};
-  const url = String(config.url || "").replace(/\/$/, "");
-  const publishableKey = String(config.publishableKey || "");
-  return { url, publishableKey, connected: Boolean(url && publishableKey) };
-}
-
-function leaderboardHeaders(config, json = false) {
-  return {
-    apikey: config.publishableKey,
-    Authorization: `Bearer ${config.publishableKey}`,
-    ...(json ? { "Content-Type": "application/json", Prefer: "return=minimal" } : {}),
-  };
-}
 
 function beatsBaseline(score) {
   const tolerance = Math.max(1e-12, Math.abs(state.baseline.score) * 1e-9);
   return Number.isFinite(score) && score < state.baseline.score - tolerance;
-}
-
-async function fetchLeaderboardRows() {
-  const config = leaderboardConfig();
-  if (!config.connected) {
-    try {
-      return JSON.parse(localStorage.getItem(LOCAL_LEADERBOARD_KEY) || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
-  const query = new URLSearchParams({
-    select: "username,score,created_at",
-    scenario_version: `eq.${LEADERBOARD_SCENARIO}`,
-    order: "score.asc",
-    limit: "100",
-  });
-  const response = await fetch(`${config.url}/rest/v1/leaderboard_scores?${query}`, {
-    headers: leaderboardHeaders(config),
-  });
-  if (!response.ok) throw new Error(`Leaderboard returned ${response.status}.`);
-  return response.json();
-}
-
-async function saveLeaderboardRow(row) {
-  const config = leaderboardConfig();
-  if (!config.connected) {
-    const rows = await fetchLeaderboardRows();
-    rows.push(row);
-    localStorage.setItem(LOCAL_LEADERBOARD_KEY, JSON.stringify(rows));
-    return;
-  }
-  const response = await fetch(`${config.url}/rest/v1/leaderboard_scores`, {
-    method: "POST",
-    headers: leaderboardHeaders(config, true),
-    body: JSON.stringify(row),
-  });
-  if (!response.ok) throw new Error(`Leaderboard submission returned ${response.status}.`);
-}
-
-function bestLeaderboardRows(rows) {
-  const best = new Map();
-  rows.forEach((row) => {
-    const username = String(row.username || "").trim();
-    const score = Number(row.score);
-    if (!username || !beatsBaseline(score)) return;
-    const key = username.toLocaleLowerCase();
-    if (!best.has(key) || score < Number(best.get(key).score)) best.set(key, { ...row, username, score });
-  });
-  return [...best.values()].sort((a, b) => a.score - b.score).slice(0, 20);
-}
-
-function renderLeaderboard(rows) {
-  const leaders = bestLeaderboardRows(rows);
-  const body = document.querySelector("#leaderboard-body");
-  const leaderRows = leaders.map((row, i) => {
-    const date = row.created_at ? new Date(row.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
-    return `<tr><td>${i + 1}</td><td>${escapeHtml(row.username)}</td><td>${row.score.toFixed(5)}</td><td>${escapeHtml(date)}</td></tr>`;
-  });
-  leaderRows.push(`<tr class="is-baseline"><td>—</td><td>Live 50/50 baseline</td><td>${state.baseline.score.toFixed(5)}</td><td>score to beat</td></tr>`);
-  body.innerHTML = leaderRows.join("");
-}
-
-function updateLeaderboardEligibility() {
-  const submit = document.querySelector("#leaderboard-submit");
-  if (!submit) return;
-  submit.disabled = !state.challenger || !beatsBaseline(state.challenger.score);
-}
-
-async function wireLeaderboard() {
-  const form = document.querySelector("#leaderboard-form");
-  const name = document.querySelector("#leaderboard-name");
-  const status = document.querySelector("#leaderboard-status");
-  name.value = localStorage.getItem("aoa-leaderboard-name") || "";
-  try {
-    renderLeaderboard(await fetchLeaderboardRows());
-    status.textContent = leaderboardConfig().connected
-      ? "Top score per display name. Submissions are accepted on the honour system."
-      : "Local preview mode: scores are stored only in this browser until the shared leaderboard is connected.";
-  } catch (error) {
-    renderLeaderboard([]);
-    status.className = "leaderboard-status err";
-    status.textContent = `Could not load the leaderboard: ${error.message}`;
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    status.className = "leaderboard-status";
-    const username = name.value.trim();
-    if (!state.challenger || !beatsBaseline(state.challenger.score)) {
-      status.className = "leaderboard-status err";
-      status.textContent = "Run a strategy that beats the baseline before submitting.";
-      return;
-    }
-    if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{1,23}$/u.test(username)) {
-      status.className = "leaderboard-status err";
-      status.textContent = "Use 2–24 letters or numbers; spaces, dots, underscores and hyphens are allowed.";
-      return;
-    }
-    const submit = document.querySelector("#leaderboard-submit");
-    submit.disabled = true;
-    status.textContent = "Submitting your score...";
-    try {
-      localStorage.setItem("aoa-leaderboard-name", username);
-      await saveLeaderboardRow({
-        username,
-        score: state.challenger.score,
-        mean_gap: state.challenger.meanGap,
-        max_gap: state.challenger.maxGap,
-        scenario_version: LEADERBOARD_SCENARIO,
-        solver_version: "highs-1.15.3",
-        created_at: new Date().toISOString(),
-      });
-      renderLeaderboard(await fetchLeaderboardRows());
-      status.textContent = leaderboardConfig().connected
-        ? "Score submitted. Nice work."
-        : "Score saved in this browser. Connect the shared leaderboard to publish it for everyone.";
-    } catch (error) {
-      status.className = "leaderboard-status err";
-      status.textContent = `Could not submit the score: ${error.message}`;
-    } finally {
-      updateLeaderboardEligibility();
-    }
-  });
-  updateLeaderboardEligibility();
 }
 
 function pickSku(k) {
@@ -1444,7 +1293,6 @@ async function boot() {
   wireScroll(document.querySelector("#routing"), routing);
   wireScroll(document.querySelector("#targets"), solution);
   wireExplorer(lab);
-  await wireLeaderboard();
 }
 
 async function loadBaseline() {
@@ -1568,7 +1416,6 @@ function wireExplorer(stage) {
       play((scrub.value / 1000) * (n - 1));
       showVerdict();
       renderTable();
-      updateLeaderboardEligibility();
       status.textContent = "Done. Scrub or press play to watch your strategy route the boxes.";
     } catch (err) {
       status.className = "status err";
