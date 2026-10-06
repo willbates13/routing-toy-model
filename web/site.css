@@ -87,7 +87,7 @@ a { color: inherit; }
   margin-bottom: 8px; color: var(--muted); font: 600 9.5px var(--mono);
   letter-spacing: 0.06em; text-transform: uppercase;
 }
-.vector-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.vector-grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
 .vector-grid span {
   position: relative; min-height: 42px; display: grid; place-items: center; border-radius: 7px;
   background: var(--line-soft); font-family: var(--mono);
@@ -96,6 +96,7 @@ a { color: inherit; }
 .vector-grid b { color: var(--ink); font-size: 13px; }
 .vector-grid .has-7, .box-tile .has-7 { background: rgba(42, 120, 214, 0.88); }
 .vector-grid .has-5, .box-tile .has-5 { background: rgba(42, 120, 214, 0.68); }
+.vector-grid .has-4, .box-tile .has-4 { background: rgba(42, 120, 214, 0.58); }
 .vector-grid .has-3, .box-tile .has-3 { background: rgba(42, 120, 214, 0.48); }
 .vector-grid .has-2, .box-tile .has-2 { background: rgba(42, 120, 214, 0.34); }
 .vector-grid [class^="has-"] b, .vector-grid [class*=" has-"] b { color: var(--surface-1); }
@@ -106,7 +107,7 @@ a { color: inherit; }
 .vector-map b { color: var(--site-a); font-size: 18px; line-height: 1; }
 .tile-row { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .box-tile {
-  flex: 0 0 auto; width: 156px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  flex: 0 0 auto; width: 146px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
   padding: 8px; border: 1px solid rgba(42, 120, 214, 0.45); border-radius: 10px;
   background: rgba(42, 120, 214, 0.06);
 }
@@ -118,7 +119,7 @@ a { color: inherit; }
 .factory-box > strong { display: block; color: var(--ink); font-size: 13px; }
 .factory-box > span { display: block; color: var(--muted); font-size: 10px; margin-bottom: 7px; }
 .factory-box > em { display: block; margin-top: 6px; color: var(--muted); font: 9.5px var(--mono); font-style: normal; }
-.host-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.host-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
 .host-grid i {
   display: grid; place-items: center; height: 22px; border-radius: 4px;
   color: var(--surface-1); background: var(--site-a); font: 8px var(--mono); font-style: normal;
@@ -336,7 +337,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 60px; color: var(--m
   .topbar .mark { white-space: nowrap; }
   .topbar nav { width: 100%; margin-left: 0; justify-content: space-between; gap: 8px; font-size: 11px; }
   .concept-visual { padding: 10px; }
-  .vector-grid { gap: 4px; }
+  .vector-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
   .vector-grid span { min-height: 38px; }
   .tile-row { align-items: flex-start; gap: 10px; }
   .box-tile { width: 130px; gap: 3px; padding: 6px; }

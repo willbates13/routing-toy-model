@@ -128,7 +128,7 @@
   function ensureSolverWorker(onStatus) {
     if (solverReady) return solverReady;
     if (onStatus) onStatus("Loading the exact optimiser (first run only)...");
-    solverWorker = new Worker(new URL("highs-worker.mjs", window.location.href), { type: "module" });
+    solverWorker = new Worker(new URL("highs-worker.mjs?v=3", window.location.href), { type: "module" });
     solverReady = new Promise((resolve, reject) => {
       const loadTimer = setTimeout(() => {
         const error = new Error("The exact optimiser took too long to load. Check your connection and try again.");
@@ -215,6 +215,7 @@
     hostedA,
     hostedB,
     previousAIds,
+    referenceAIds,
     lambdaMove,
     onStatus = null
   ) {
@@ -239,6 +240,7 @@
           eligibleA: data.eligibleA,
           eligibleB: data.eligibleB,
           previousAIds: [...previousAIds],
+          referenceAIds: [...referenceAIds],
           lambdaMove,
         },
       });
@@ -338,7 +340,12 @@
     const aHistory = [];
     const bHistory = [];
     const routedExecutions = [];
-    let previousAIds = new Set();
+    // Every challenger starts from the same known pre-run routing state. This
+    // also removes solver-specific tie drift on execution zero, so pasting the
+    // documented 50/50 rule faithfully reproduces the cached baseline.
+    let previousAIds = new Set(
+      baseline.executions[0].boxes.filter((box) => box.site === "A").map((box) => box.id)
+    );
 
     for (let i = 0; i < baseline.executions.length; i += 1) {
       const source = baseline.executions[i];
@@ -364,6 +371,7 @@
         hostedA,
         hostedB,
         previousAIds,
+        new Set(source.boxes.filter((box) => box.site === "A").map((box) => box.id)),
         lambdaMove,
         options.onStatus
       );

@@ -25,7 +25,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
 
     def log_message(self, fmt, *args):  # quieter console
-        if "/api/" in (args[0] if args else ""):
+        if any("/api/" in str(arg) for arg in args):
             super().log_message(fmt, *args)
 
     def do_GET(self):

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AOA toy model — routing boxes to factories</title>
-<link rel="stylesheet" href="site.css?v=20">
+<link rel="stylesheet" href="site.css?v=21">
 </head>
 <body>
 
@@ -50,8 +50,8 @@
       <div class="card">
         <h3>A box is a SKU vector</h3>
         <div class="concept-visual vector-visual" role="img"
-             aria-label="A fourteen-value SKU vector maps directly to a fourteen-cell box tile">
-          <div class="visual-label">14 quantities — one for each SKU</div>
+             aria-label="A twenty-value SKU vector maps directly to a twenty-cell box tile">
+          <div class="visual-label">20 quantities — one for each SKU</div>
           <div class="vector-grid">
             <span><i>0</i><b>0</b></span><span class="has-7"><i>1</i><b>7</b></span>
             <span><i>2</i><b>0</b></span><span class="has-3"><i>3</i><b>3</b></span>
@@ -60,41 +60,47 @@
             <span><i>8</i><b>0</b></span><span><i>9</i><b>0</b></span>
             <span><i>10</i><b>0</b></span><span class="has-2"><i>11</i><b>2</b></span>
             <span><i>12</i><b>0</b></span><span><i>13</i><b>0</b></span>
+            <span><i>14</i><b>0</b></span><span><i>15</i><b>0</b></span>
+            <span><i>16</i><b>0</b></span><span class="has-4"><i>17</i><b>4</b></span>
+            <span><i>18</i><b>0</b></span><span><i>19</i><b>0</b></span>
           </div>
-          <div class="vector-map"><span>the same 14 values</span><b>↓</b><span>become one box tile</span></div>
+          <div class="vector-map"><span>the same 20 values</span><b>↓</b><span>become one box tile</span></div>
           <div class="tile-row">
             <div class="box-tile" aria-hidden="true">
-              <i></i><i class="has-7"></i><i></i><i class="has-3"></i><i></i><i></i><i class="has-5"></i>
-              <i></i><i></i><i></i><i></i><i class="has-2"></i><i></i><i></i>
+              <i></i><i class="has-7"></i><i></i><i class="has-3"></i><i></i><i></i><i class="has-5"></i><i></i>
+              <i></i><i></i><i></i><i class="has-2"></i><i></i><i></i><i></i><i></i>
+              <i></i><i class="has-4"></i><i></i><i></i>
             </div>
             <div><strong>Position = SKU</strong><span>Colour means this box needs that SKU.<br>Darker means more units.</span></div>
           </div>
         </div>
-        <p>Each box draws two to four SKUs out of <span data-n-skus>14</span>, one to nine units
+        <p>Each box draws three to five SKUs out of <span data-n-skus>20</span>, one to nine units
            of each, and leaves the rest at zero.</p>
       </div>
       <div class="card">
         <h3>A factory hosts some SKUs</h3>
         <div class="concept-visual factory-visual" role="img"
-             aria-label="Factory A cannot host SKU 2, while Factory B hosts all fourteen SKUs">
+             aria-label="Factory A cannot host SKUs 2 and 15, while Factory B hosts all twenty SKUs">
           <div class="factory-pair">
-            <div class="factory-box site-a"><strong>Factory A</strong><span>hosts 13 of 14 SKUs</span>
+            <div class="factory-box site-a"><strong>Factory A</strong><span>hosts 18 of 20 SKUs</span>
               <div class="host-grid">
                 <i>0</i><i>1</i><i class="blocked">2</i><i>3</i><i>4</i><i>5</i><i>6</i>
-                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i>
+                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i><i>14</i><i class="blocked">15</i>
+                <i>16</i><i>17</i><i>18</i><i>19</i>
               </div>
-              <em>SKU 2 is not hosted</em>
+              <em>SKUs 2 and 15 are not hosted</em>
             </div>
-            <div class="factory-box site-b"><strong>Factory B</strong><span>hosts all 14 SKUs</span>
+            <div class="factory-box site-b"><strong>Factory B</strong><span>hosts all 20 SKUs</span>
               <div class="host-grid">
                 <i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i>
-                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i>
+                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i><i>14</i><i>15</i>
+                <i>16</i><i>17</i><i>18</i><i>19</i>
               </div>
               <em>every SKU is available</em>
             </div>
           </div>
           <div class="eligibility-route">
-            <div class="route-box"><span>box contains</span><b>SKU 2</b></div>
+            <div class="route-box"><span>box contains</span><b>SKU 2 or 15</b></div>
             <div class="route-arrow">→</div>
             <div><strong>Factory B only</strong><span>the whole box must follow its least eligible SKU</span></div>
           </div>
@@ -367,7 +373,7 @@
     ]</textarea>
           <p class="desc" id="strategy-help">Define exactly one function named
              <code>set_targets(skus, context)</code>. It must return a list with
-             <span data-n-skus>14</span> finite numbers. Each execution has a two-second limit.
+             <span data-n-skus>20</span> finite numbers. Each execution has a two-second limit.
              The first run also downloads the in-browser Python runtime and exact optimiser.</p>
         </div>
 

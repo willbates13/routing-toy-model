@@ -38,7 +38,7 @@ const signedText = (v) => (v > 0 ? `+${v}` : v < 0 ? `-${Math.abs(v)}` : "0");
 
 const AGENT_PROMPT = `You are writing a Python target-setting strategy for an interactive factory-routing challenge.
 
-The simulation has 14 SKUs, 48 indivisible customer boxes, two factories, and 12 executions. Every box contains several SKUs. Each execution changes the global order volume. Factory A cannot host SKU 2; factory B hosts every SKU. The optimiser must send exactly half the boxes to each factory, keep boxes whole, and respect eligibility.
+The simulation has 20 SKUs, 64 indivisible customer boxes, two factories, and 16 executions. Every box contains three to five SKUs. Each execution changes the global order volume. Factory A cannot host SKUs 2 or 15; factory B hosts every SKU. The optimiser must send exactly half the boxes to each factory, keep boxes whole, and respect eligibility.
 
 Your only job is to decide the target SKU-volume vector for factory A. The browser will optimise the box assignment toward that target and score the result. Lower is better. The score is the sum of squared gaps between site WMAPE and global WMAPE across executions. Added site error occurs when the signed forecast errors at the two factories point in opposite directions.
 
@@ -1204,7 +1204,7 @@ class SolutionStage {
 
 /* ------------------------------------------------------------ page wiring */
 
-const PERSONAL_BEST_KEY = "aoa-personal-best:live-50-highs-1.15.3-v1";
+const PERSONAL_BEST_KEY = "aoa-personal-best:64-box-20-sku-highs-1.15.3-v1";
 const state = { baseline: null, challenger: null, best: null, sku: 0, stages: [], chipSets: [] };
 
 function beatsBaseline(score) {

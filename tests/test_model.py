@@ -68,6 +68,20 @@ class TestSolver(unittest.TestCase):
             sorted(x + y for x, y in zip(A.skus, B.skus)), sorted(totals)
         )
 
+    def test_default_scenario_is_harder_but_always_feasible(self):
+        scenario = build_scenario()
+        cfg = scenario.config
+        self.assertEqual((cfg.n_boxes, cfg.n_skus, cfg.n_executions), (64, 20, 16))
+        self.assertEqual(cfg.churn_per_execution, 10)
+        self.assertEqual([k for k, hosted in enumerate(cfg.hosted_skus_A) if not hosted], [2, 15])
+        for execution in scenario.executions:
+            forced_b = sum(
+                not all(not units or cfg.hosted_skus_A[k] for k, units in enumerate(box.skus))
+                for box in execution
+            )
+            self.assertLessEqual(forced_b, cfg.n_boxes // 2)
+            self.assertTrue(all(3 <= box.lines <= 5 for box in execution))
+
 
 class TestRules(unittest.TestCase):
     def test_eligibility_overrides_the_players_share(self):

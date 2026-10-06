@@ -32,11 +32,11 @@ default path is the exact solver.
 
 | Piece | What it is |
 |---|---|
-| `Box` | A vector of SKU quantities - two to four of the fourteen SKUs carry one to nine units, the rest are zero. A box goes to exactly one factory. |
+| `Box` | A vector of SKU quantities - three to five of the twenty SKUs carry one to nine units, the rest are zero. A box goes to exactly one factory. |
 | `Site` | A factory. Adds up the vectors it holds, and refuses any box needing a SKU it does not host. |
-| Execution | One routing run over the current order volume. Between executions eight orders churn. |
+| Execution | One routing run over the current order volume. Between executions ten orders churn. |
 
-Factory A does not host SKU 2, so every box needing it is stuck at factory B. Both factories
+Factory A does not host SKUs 2 or 15, so every box needing either is stuck at factory B. Both factories
 always take the same number of boxes.
 
 ## What the optimiser does
@@ -53,12 +53,12 @@ the published browser experience. The optimiser never changes — the target doe
 
 Two details keep it quick. Everything is scaled to whole numbers, so the objective is integral
 and CBC can round its bound up and prune instead of chasing fractions; and CBC gets several
-threads. A full twelve-execution run takes a few seconds.
+threads. A full sixteen-execution run takes a few seconds.
 
 ## The baseline
 
 Every execution targets half of the current global SKU volume at factory A. The target therefore
-moves live with the orders; eligibility still forces SKU 2's target at A to zero. This Live 50/50
+moves live with the orders; eligibility still forces SKUs 2 and 15's targets at A to zero. This Live 50/50
 rule is the score to beat.
 
 The baseline run is computed once and cached in `baseline.json`. Delete that file to rebuild it,
@@ -127,7 +127,7 @@ section follows it all the way down.
 ## Beating the baseline
 
 The published site includes a browser-based coding challenge. A visitor can paste a Python
-function into the editor and run all twelve executions without a backend. Strategy code runs
+function into the editor and run all sixteen executions without a backend. Strategy code runs
 through Pyodide in a Web Worker with a two-second per-execution limit and receives two inputs:
 
 ```python
@@ -190,10 +190,12 @@ tests/              unit tests
 ```
 
 Scenario size, SKU count, churn rate, eligibility and seed all live in `ScenarioConfig` in
-`aoa/scenario.py`. The defaults — 48 boxes, 14 SKUs, 12 executions, 8 orders churning between
-them — were picked to leave a visible gap between the two error curves while keeping a run to a
-few seconds. More churn and more SKUs widen the gap; more boxes cost solve time.
+`aoa/scenario.py`. The defaults — 64 boxes, 20 SKUs, 16 executions, 10 orders churning between
+them, and three to five SKUs per box — create a more coupled routing problem while keeping a run
+quick. More churn, denser boxes, and additional eligibility restrictions widen the gap; more boxes
+primarily cost solve time.
 
 One constraint when changing it: boxes needing a SKU that only one factory hosts are stuck
 there, so if more than half of them end up stuck at the same factory the even split becomes
-impossible and the solver says so. Keep the SKUs per box well under the catalogue size.
+impossible. Scenario generation rejects any replacement that would cross that limit, while still
+keeping the SKUs per box well under the catalogue size.
