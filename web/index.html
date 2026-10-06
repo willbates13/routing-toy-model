@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AOA toy model — routing boxes to factories</title>
-<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="site.css?v=20">
 </head>
 <body>
 
@@ -49,98 +49,56 @@
     <div class="cards">
       <div class="card">
         <h3>A box is a SKU vector</h3>
-        <svg width="100%" height="150" viewBox="0 0 300 150" role="img"
-             aria-label="A box is a vector of SKU quantities, mostly zero, drawn as a tile of cells">
-          <g font-family="ui-monospace, monospace" font-size="8.5" fill="#86847a">
-            <text x="0" y="12">SKU</text>
-            <text x="34" y="12">0</text><text x="60" y="12">1</text><text x="86" y="12">2</text>
-            <text x="112" y="12">3</text><text x="138" y="12">4</text><text x="164" y="12">5</text>
-            <text x="190" y="12">6</text><text x="216" y="12">7</text><text x="242" y="12">8</text>
-            <text x="268" y="12">9</text>
-          </g>
-          <g>
-            <rect x="30" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="56" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.85"/>
-            <rect x="82" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="108" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.45"/>
-            <rect x="134" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="160" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="186" y="18" width="20" height="20" rx="4" fill="#2a78d6" opacity="0.65"/>
-            <rect x="212" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="238" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-            <rect x="264" y="18" width="20" height="20" rx="4" fill="#ddd9cd" opacity="0.5"/>
-          </g>
-          <g font-family="ui-monospace, monospace" font-size="10" fill="#16150f">
-            <text x="36" y="32">0</text><text x="62" y="32" fill="#fcfcfb">7</text><text x="88" y="32">0</text>
-            <text x="114" y="32">3</text><text x="140" y="32">0</text><text x="166" y="32">0</text>
-            <text x="192" y="32" fill="#fcfcfb">5</text><text x="218" y="32">0</text><text x="244" y="32">0</text>
-            <text x="270" y="32">0</text>
-          </g>
-          <text x="0" y="64" font-size="11.5" fill="#57564f" font-family="ui-sans-serif, sans-serif">
-            On the stage that same vector is one tile,
-          </text>
-          <text x="0" y="80" font-size="11.5" fill="#57564f" font-family="ui-sans-serif, sans-serif">
-            read left to right, top to bottom:
-          </text>
-          <g transform="translate(0,92)">
-            <rect x="0" y="0" width="56" height="56" rx="9" fill="#2a78d6" opacity="0.08" stroke="#2a78d6" stroke-opacity="0.45"/>
-            <g>
-              <rect x="7" y="7" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="16.8" y="7" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.85"/>
-              <rect x="26.6" y="7" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="36.4" y="7" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.45"/>
-              <rect x="46.2" y="7" width="2.8" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="7" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="16.8" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#2a78d6" opacity="0.65"/>
-              <rect x="26.6" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="36.4" y="29.4" width="8.4" height="19.6" rx="1.5" fill="#ddd9cd"/>
-              <rect x="46.2" y="29.4" width="2.8" height="19.6" rx="1.5" fill="#ddd9cd"/>
-            </g>
-          </g>
-          <text x="72" y="112" font-size="11" fill="#86847a" font-family="ui-sans-serif, sans-serif">
-            filled where the box needs that SKU,
-          </text>
-          <text x="72" y="128" font-size="11" fill="#86847a" font-family="ui-sans-serif, sans-serif">
-            darker where it needs more units
-          </text>
-        </svg>
+        <div class="concept-visual vector-visual" role="img"
+             aria-label="A fourteen-value SKU vector maps directly to a fourteen-cell box tile">
+          <div class="visual-label">14 quantities — one for each SKU</div>
+          <div class="vector-grid">
+            <span><i>0</i><b>0</b></span><span class="has-7"><i>1</i><b>7</b></span>
+            <span><i>2</i><b>0</b></span><span class="has-3"><i>3</i><b>3</b></span>
+            <span><i>4</i><b>0</b></span><span><i>5</i><b>0</b></span>
+            <span class="has-5"><i>6</i><b>5</b></span><span><i>7</i><b>0</b></span>
+            <span><i>8</i><b>0</b></span><span><i>9</i><b>0</b></span>
+            <span><i>10</i><b>0</b></span><span class="has-2"><i>11</i><b>2</b></span>
+            <span><i>12</i><b>0</b></span><span><i>13</i><b>0</b></span>
+          </div>
+          <div class="vector-map"><span>the same 14 values</span><b>↓</b><span>become one box tile</span></div>
+          <div class="tile-row">
+            <div class="box-tile" aria-hidden="true">
+              <i></i><i class="has-7"></i><i></i><i class="has-3"></i><i></i><i></i><i class="has-5"></i>
+              <i></i><i></i><i></i><i></i><i class="has-2"></i><i></i><i></i>
+            </div>
+            <div><strong>Position = SKU</strong><span>Colour means this box needs that SKU.<br>Darker means more units.</span></div>
+          </div>
+        </div>
         <p>Each box draws two to four SKUs out of <span data-n-skus>14</span>, one to nine units
            of each, and leaves the rest at zero.</p>
       </div>
       <div class="card">
         <h3>A factory hosts some SKUs</h3>
-        <svg width="100%" height="150" viewBox="0 0 300 150" role="img" aria-label="Factory A cannot host every SKU">
-          <rect x="4" y="16" width="136" height="60" rx="8" fill="none" stroke="#ddd9cd"/>
-          <text x="14" y="36" font-size="12" fill="#16150f" font-family="ui-sans-serif, sans-serif">Factory A</text>
-          <g fill="#2a78d6">
-            <rect x="14" y="46" width="8" height="12" rx="2"/><rect x="26" y="46" width="8" height="12" rx="2"/>
-            <rect x="50" y="46" width="8" height="12" rx="2"/><rect x="62" y="46" width="8" height="12" rx="2"/>
-            <rect x="74" y="46" width="8" height="12" rx="2"/><rect x="86" y="46" width="8" height="12" rx="2"/>
-            <rect x="98" y="46" width="8" height="12" rx="2"/><rect x="110" y="46" width="8" height="12" rx="2"/>
-            <rect x="122" y="46" width="8" height="12" rx="2"/>
-          </g>
-          <rect x="38" y="46" width="8" height="12" rx="2" fill="#ddd9cd"/>
-          <text x="14" y="70" font-size="9" fill="#86847a" font-family="ui-monospace, monospace">SKU 2 not hosted</text>
-          <rect x="160" y="16" width="136" height="60" rx="8" fill="none" stroke="#ddd9cd"/>
-          <text x="170" y="36" font-size="12" fill="#16150f" font-family="ui-sans-serif, sans-serif">Factory B</text>
-          <g fill="#eb6834">
-            <rect x="170" y="46" width="8" height="12" rx="2"/><rect x="182" y="46" width="8" height="12" rx="2"/>
-            <rect x="194" y="46" width="8" height="12" rx="2"/><rect x="206" y="46" width="8" height="12" rx="2"/>
-            <rect x="218" y="46" width="8" height="12" rx="2"/><rect x="230" y="46" width="8" height="12" rx="2"/>
-            <rect x="242" y="46" width="8" height="12" rx="2"/><rect x="254" y="46" width="8" height="12" rx="2"/>
-            <rect x="266" y="46" width="8" height="12" rx="2"/><rect x="278" y="46" width="8" height="12" rx="2"/>
-          </g>
-          <text x="170" y="70" font-size="9" fill="#86847a" font-family="ui-monospace, monospace">hosts everything</text>
-          <g transform="translate(4,92)">
-            <rect x="0" y="0" width="34" height="34" rx="6" fill="#eb6834" opacity="0.1" stroke="#16150f" stroke-width="1.6"/>
-            <text x="46" y="14" font-size="11" fill="#57564f" font-family="ui-sans-serif, sans-serif">
-              a tile outlined in black needs SKU 2,
-            </text>
-            <text x="46" y="29" font-size="11" fill="#57564f" font-family="ui-sans-serif, sans-serif">
-              so it can only ever go to factory B
-            </text>
-          </g>
-        </svg>
+        <div class="concept-visual factory-visual" role="img"
+             aria-label="Factory A cannot host SKU 2, while Factory B hosts all fourteen SKUs">
+          <div class="factory-pair">
+            <div class="factory-box site-a"><strong>Factory A</strong><span>hosts 13 of 14 SKUs</span>
+              <div class="host-grid">
+                <i>0</i><i>1</i><i class="blocked">2</i><i>3</i><i>4</i><i>5</i><i>6</i>
+                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i>
+              </div>
+              <em>SKU 2 is not hosted</em>
+            </div>
+            <div class="factory-box site-b"><strong>Factory B</strong><span>hosts all 14 SKUs</span>
+              <div class="host-grid">
+                <i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i>
+                <i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i><i>13</i>
+              </div>
+              <em>every SKU is available</em>
+            </div>
+          </div>
+          <div class="eligibility-route">
+            <div class="route-box"><span>box contains</span><b>SKU 2</b></div>
+            <div class="route-arrow">→</div>
+            <div><strong>Factory B only</strong><span>the whole box must follow its least eligible SKU</span></div>
+          </div>
+        </div>
         <p>A factory adds up the vectors of the boxes it holds, and refuses any box needing a
            SKU it does not host. Both factories always take the same number of boxes.</p>
       </div>
