@@ -1125,7 +1125,7 @@ class SolutionStage {
     });
     const lowerY = Math.min(this.h - 170, y + 230);
     this.panel(26, lowerY, this.w - 52, 116);
-    this.text("The optimiser cannot take just the blue cell", 46, lowerY + 34, { size: 16, family: SERIF, weight: 500 });
+    this.text("A box moves as one unit, not one SKU at a time", 46, lowerY + 34, { size: 16, family: SERIF, weight: 500 });
     this.text("Moving the box fixes SKU 0, but pushes SKU 1 and SKU 2 away from their targets.", 46, lowerY + 62, { color: COLORS.textSecondary || "#57564f", size: 12 });
     this.text("It must search combinations of indivisible box vectors.", 46, lowerY + 86, { color: COLORS.muted, size: 11, family: MONO });
   }

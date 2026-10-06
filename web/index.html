@@ -186,8 +186,9 @@
           <h3>Now split the boxes</h3>
           <p>The same order volume, divided between two factories. Each takes half the boxes,
              and a tile outlined in black can only go to factory B.</p>
-          <p>Scroll on and boxes start hopping sides: that is the optimiser holding its target
-             as customers edit orders and simulated boxes change.</p>
+          <p>Scroll on and boxes start hopping sides as customers edit orders and simulated
+             boxes change. Watch how those moves alter each factory's SKU forecast and the
+             site-specific error.</p>
         </div>
         <div class="step" data-layers="boxes sku">
           <div class="tag">Six</div>
@@ -294,7 +295,7 @@
           <p>A target is written one SKU at a time, but routing moves whole boxes. A box bundles
              several SKUs together, so moving four units of one SKU can also move two other SKUs
              that were already on target.</p>
-          <p>The optimiser has to hunt for a combination of boxes whose bundled contents land
+          <p>The split therefore needs a combination of whole boxes whose bundled contents land
              close to every SKU target at once. The exact vector may not exist.</p>
         </div>
 
@@ -458,6 +459,6 @@
 </footer>
 
 <script src="strategy-runner.js?v=3"></script>
-<script src="experience.js?v=18"></script>
+<script src="experience.js?v=19"></script>
 </body>
 </html>
