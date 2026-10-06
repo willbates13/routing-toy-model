@@ -1,5 +1,5 @@
 """Run a target rule over the whole execution stream and shape the result for
-the web page. Also owns the live 50/50 baseline everyone is measured against.
+the web page. Also owns the swept constant-share baseline everyone is measured against.
 """
 
 import json
@@ -94,9 +94,9 @@ def _site_summary(site):
 
 
 def get_baseline(scenario, time_limit_s=10, cache_path=BASELINE_PATH, refresh=False):
-    """The live 50/50 reference run. Computed once, then read from disk.
+    """The swept live-share reference run. Computed once, then read from disk.
 
-    Every execution targets half of the current global volume at site A, with
+    Every execution targets 56.06% of the current global volume at site A, with
     eligibility overriding that share. This is the number to beat.
     """
     key = scenario.config.key()

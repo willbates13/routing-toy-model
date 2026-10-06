@@ -350,12 +350,12 @@
         </div>
 
         <div class="baseline-example">
-          <div class="example-title">Baseline example · Live 50/50</div>
-          <p>For every SKU that factory A can host, target half of the current global volume.
-             This target moves whenever the orders change.</p>
+          <div class="example-title">Baseline example · Live 56.06/43.94</div>
+          <p>A sweep of constant SKU shares found the best target on this scenario at 56.06%
+             for factory A and 43.94% for factory B. The target moves whenever orders change.</p>
           <pre><code>def set_targets(skus, context):
     return [
-        units * 0.5 if context["hostedAtA"][sku] else 0
+        units * 0.5606 if context["hostedAtA"][sku] else 0
         for sku, units in enumerate(skus)
     ]</code></pre>
         </div>
@@ -368,7 +368,7 @@
     # context["history"]: earlier { skus, target } values
     # Return factory A's target vector.
     return [
-        units * 0.5 if context["hostedAtA"][sku] else 0
+        units * 0.5606 if context["hostedAtA"][sku] else 0
         for sku, units in enumerate(skus)
     ]</textarea>
           <p class="desc" id="strategy-help">Define exactly one function named
@@ -458,6 +458,6 @@
 </footer>
 
 <script src="strategy-runner.js?v=3"></script>
-<script src="experience.js?v=17"></script>
+<script src="experience.js?v=18"></script>
 </body>
 </html>

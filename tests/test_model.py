@@ -106,9 +106,9 @@ class TestRules(unittest.TestCase):
         later = targets_for_execution(rule, state, [40] * 10, hosted_A, hosted_B)
         self.assertEqual(later[0], 20.0)
 
-    def test_baseline_is_live_fifty_fifty(self):
+    def test_baseline_is_swept_live_share(self):
         self.assertEqual(BASELINE_RULE.mode, "proportional")
-        self.assertEqual(BASELINE_RULE.share, 0.5)
+        self.assertEqual(BASELINE_RULE.share, 0.5606)
 
 
 class TestSignClash(unittest.TestCase):

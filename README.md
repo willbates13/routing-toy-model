@@ -57,9 +57,10 @@ threads. A full sixteen-execution run takes a few seconds.
 
 ## The baseline
 
-Every execution targets half of the current global SKU volume at factory A. The target therefore
-moves live with the orders; eligibility still forces SKUs 2 and 15's targets at A to zero. This Live 50/50
-rule is the score to beat.
+Every execution targets 56.06% of the current global SKU volume at factory A and 43.94% at
+factory B. A sweep of constant shares—coarse five-point steps followed by a finer search around
+the winner—selected this split for the fixed scenario. The target moves live with the orders;
+eligibility still forces SKUs 2 and 15's targets at A to zero. This rule is the score to beat.
 
 The baseline run is computed once and cached in `baseline.json`. Delete that file to rebuild it,
 for example after changing the scenario.
@@ -133,7 +134,7 @@ through Pyodide in a Web Worker with a two-second per-execution limit and receiv
 ```python
 def set_targets(skus, context):
     return [
-        units * 0.5 if context["hostedAtA"][sku] else 0
+        units * 0.5606 if context["hostedAtA"][sku] else 0
         for sku, units in enumerate(skus)
     ]
 ```
@@ -145,7 +146,7 @@ def set_targets(skus, context):
 
 The browser uses the same whole-box, equal-count and eligibility constraints as the Python model.
 HiGHS 1.15.3 runs the MILP in a Web Worker and a result is accepted only when the solver reports
-it as optimal. The cached Live 50/50 baseline was generated with that same solver version.
+it as optimal. The cached swept-share baseline follows the same optimisation model.
 The **Copy agent prompt** button gives an AI coding agent the full contract and scoring objective.
 The page saves the visitor's best score and its Python function in local browser storage, so later
 iterations cannot overwrite it. The saved code can be copied back to the clipboard from the scorecard.
@@ -163,7 +164,7 @@ For local development, `./run.sh` still starts the Python server and exact solve
 | Rule | Target for SKU *k* |
 |---|---|
 | Frozen | `share × total_k` at the first execution, then never moves. |
-| Proportional | `share × total_k` at this execution. Follows demand as it drifts. This is the Live 50/50 baseline. |
+| Proportional | `share × total_k` at this execution. Follows demand as it drifts. A swept 56.06% share at A is the baseline. |
 | Affine | first split, plus `share ×` the change in demand since. |
 | Blend | a weighted mix of the frozen and proportional targets. |
 

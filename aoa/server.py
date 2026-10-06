@@ -1,7 +1,7 @@
 """A tiny standard-library web server: static page plus two JSON endpoints.
 
     GET  /                 the page
-    GET  /api/baseline     the Live 50/50 reference run
+    GET  /api/baseline     the swept live-share reference run
     POST /api/run          body: a target rule -> that rule's run
 """
 

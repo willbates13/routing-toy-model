@@ -1265,7 +1265,14 @@ function renderPersonalBest() {
     return;
   }
   score.textContent = state.best.score.toFixed(4);
-  note.textContent = `best of this browser · ${pct((state.baseline.score - state.best.score) / state.baseline.score, 1)} vs baseline`;
+  const relative = (state.baseline.score - state.best.score) / state.baseline.score;
+  const tolerance = 1e-9;
+  const comparison = Math.abs(relative) <= tolerance
+    ? "matches baseline"
+    : relative > 0
+      ? `${pct(relative, 1)} better than baseline`
+      : `${pct(-relative, 1)} above baseline`;
+  note.textContent = `best of this browser · ${comparison}`;
   copy.disabled = false;
   panel.classList.remove("is-empty");
   description.textContent = `The exact function that produced your best score of ${state.best.score.toFixed(4)}. It stays on this browser and device.`;
@@ -1521,7 +1528,7 @@ function showVerdict() {
 }
 
 function renderTable() {
-  const rows = [["Baseline (live 50/50 target)", state.baseline]];
+  const rows = [[state.baseline.label || "Baseline", state.baseline]];
   if (state.challenger) rows.push(["Your rule", state.challenger]);
   if (state.best) rows.push(["Your personal best", {
     rule: { mode: "saved code" },

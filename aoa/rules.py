@@ -7,7 +7,8 @@ Modes
 -----
 fixed         target_k = share_k * total_k(first execution), then frozen.
 proportional  target_k = share_k * total_k(this execution). Tracks demand drift.
-              This is the baseline: a live 50/50 target that moves with volume.
+              This is the baseline: a live 56.06/43.94 target selected by a
+              sweep of constant shares on the fixed scenario.
 affine        target_k = anchor_k + share_k * (total_k(now) - total_k(anchor)).
               Keeps the first split and passes only a share of the change on.
 blend         a weighted mix of the frozen and proportional targets.
@@ -55,8 +56,8 @@ class TargetRule:
 
 
 BASELINE_RULE = TargetRule(
-    mode="proportional", share=0.5, blend=0.0, lambda_move=0.05,
-    label="Baseline (live 50/50)"
+    mode="proportional", share=0.5606, blend=0.0, lambda_move=0.05,
+    label="Baseline (live 56.06/43.94)"
 )
 
 
