@@ -1252,15 +1252,24 @@ function renderPersonalBest() {
   const score = document.querySelector("#best-score");
   const note = document.querySelector("#best-score-note");
   const copy = document.querySelector("#copy-best-code");
+  const panel = document.querySelector("#best-code-panel");
+  const description = document.querySelector("#best-code-description");
+  const codeView = document.querySelector("#best-code-view");
   if (!state.best) {
     score.textContent = "—";
-    note.textContent = "saved in this browser";
+    note.textContent = "saved on this browser and device";
     copy.disabled = true;
+    panel.classList.add("is-empty");
+    description.textContent = "Run a strategy to save its function here.";
+    codeView.textContent = "No best strategy saved yet.";
     return;
   }
   score.textContent = state.best.score.toFixed(4);
   note.textContent = `best of this browser · ${pct((state.baseline.score - state.best.score) / state.baseline.score, 1)} vs baseline`;
   copy.disabled = false;
+  panel.classList.remove("is-empty");
+  description.textContent = `The exact function that produced your best score of ${state.best.score.toFixed(4)}. It stays on this browser and device.`;
+  codeView.textContent = state.best.code;
 }
 
 function pickSku(k) {

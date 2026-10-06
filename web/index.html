@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AOA toy model — routing boxes to factories</title>
-<link rel="stylesheet" href="site.css?v=21">
+<link rel="stylesheet" href="site.css?v=22">
 </head>
 <body>
 
@@ -394,9 +394,19 @@
           <div class="score verdict"><div class="k">Current vs baseline</div><div class="v" id="verdict">—</div>
             <div class="k" id="verdict-note">run a rule to compare</div></div>
           <div class="score best-score"><div class="k">Your best score</div><div class="v" id="best-score">—</div>
-            <div class="score-note" id="best-score-note">saved in this browser</div>
-            <button class="mini-copy" id="copy-best-code" type="button" disabled>Copy best code</button></div>
+            <div class="score-note" id="best-score-note">saved on this browser and device</div></div>
         </div>
+
+        <section class="best-code-panel is-empty" id="best-code-panel" aria-labelledby="best-code-title">
+          <div class="best-code-head">
+            <div>
+              <div class="k" id="best-code-title">Best strategy code</div>
+              <p id="best-code-description">Run a strategy to save its function here.</p>
+            </div>
+            <button class="mini-copy" id="copy-best-code" type="button" disabled>Copy best code</button>
+          </div>
+          <pre><code id="best-code-view">No best strategy saved yet.</code></pre>
+        </section>
 
         <div id="lab">
           <div class="stage" id="lab-stage">
@@ -448,6 +458,6 @@
 </footer>
 
 <script src="strategy-runner.js?v=3"></script>
-<script src="experience.js?v=16"></script>
+<script src="experience.js?v=17"></script>
 </body>
 </html>
