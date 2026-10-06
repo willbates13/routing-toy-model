@@ -5,7 +5,7 @@
    each step names the layers it wants. The explorer shows all of them at once,
    with the numbers turned on. */
 
-window.AOA_APP_BUILD = 15;
+window.AOA_APP_BUILD = 16;
 
 const COLORS = {
   ink: "#16150f",
@@ -1204,11 +1204,63 @@ class SolutionStage {
 
 /* ------------------------------------------------------------ page wiring */
 
-const state = { baseline: null, challenger: null, sku: 0, stages: [], chipSets: [] };
+const PERSONAL_BEST_KEY = "aoa-personal-best:live-50-highs-1.15.3-v1";
+const state = { baseline: null, challenger: null, best: null, sku: 0, stages: [], chipSets: [] };
 
 function beatsBaseline(score) {
   const tolerance = Math.max(1e-12, Math.abs(state.baseline.score) * 1e-9);
   return Number.isFinite(score) && score < state.baseline.score - tolerance;
+}
+
+function loadPersonalBest() {
+  try {
+    const best = JSON.parse(localStorage.getItem(PERSONAL_BEST_KEY) || "null");
+    if (!best || !Number.isFinite(Number(best.score)) || typeof best.code !== "string") return null;
+    return {
+      score: Number(best.score),
+      meanGap: Number(best.meanGap),
+      maxGap: Number(best.maxGap),
+      moved: Number(best.moved),
+      code: best.code,
+      savedAt: best.savedAt || null,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function considerPersonalBest(run, code) {
+  const tolerance = Math.max(1e-12, Math.abs(run.score) * 1e-9);
+  if (state.best && run.score >= state.best.score - tolerance) return false;
+  state.best = {
+    score: run.score,
+    meanGap: run.meanGap,
+    maxGap: run.maxGap,
+    moved: run.executions.reduce((total, execution) => total + execution.moved, 0),
+    code,
+    savedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(PERSONAL_BEST_KEY, JSON.stringify(state.best));
+  } catch (_) {
+    // The in-memory best still works when browser storage is unavailable.
+  }
+  return true;
+}
+
+function renderPersonalBest() {
+  const score = document.querySelector("#best-score");
+  const note = document.querySelector("#best-score-note");
+  const copy = document.querySelector("#copy-best-code");
+  if (!state.best) {
+    score.textContent = "—";
+    note.textContent = "saved in this browser";
+    copy.disabled = true;
+    return;
+  }
+  score.textContent = state.best.score.toFixed(4);
+  note.textContent = `best of this browser · ${pct((state.baseline.score - state.best.score) / state.baseline.score, 1)} vs baseline`;
+  copy.disabled = false;
 }
 
 function pickSku(k) {
@@ -1255,6 +1307,7 @@ function interestingSku(run) {
 
 async function boot() {
   state.baseline = await loadBaseline();
+  state.best = loadPersonalBest();
 
   const demand = new Stage(document.querySelector("#demand-stage"), {
     mode: "pool",
@@ -1287,6 +1340,7 @@ async function boot() {
   document.querySelectorAll("#baseline-score, #baseline-score-2").forEach(
     (el) => (el.textContent = state.baseline.score.toFixed(4))
   );
+  renderPersonalBest();
   renderTable();
 
   wireScroll(document.querySelector("#demand"), demand);
@@ -1380,6 +1434,16 @@ function wireExplorer(stage) {
     }
   });
 
+  document.querySelector("#copy-best-code").addEventListener("click", async () => {
+    if (!state.best) return;
+    try {
+      await navigator.clipboard.writeText(state.best.code);
+      copyNote.textContent = "Best-scoring code copied.";
+    } catch (error) {
+      copyNote.textContent = "Clipboard access was blocked. Your best code is still saved in this browser.";
+    }
+  });
+
   const play = (t) => {
     stage.render(t);
     scrubLabel.textContent = `execution ${Math.floor(t) + 1} / ${n}`;
@@ -1414,9 +1478,13 @@ function wireExplorer(stage) {
       stage.setRun(payload, state.baseline);
       stage.setSku(state.sku);
       play((scrub.value / 1000) * (n - 1));
+      const isNewBest = considerPersonalBest(payload, code.value);
       showVerdict();
+      renderPersonalBest();
       renderTable();
-      status.textContent = "Done. Scrub or press play to watch your strategy route the boxes.";
+      status.textContent = isNewBest
+        ? "New personal best saved. Scrub or press play to inspect it."
+        : "Done. Your personal best is still saved above.";
     } catch (err) {
       status.className = "status err";
       status.textContent = `Could not run that rule: ${err.message}`;
@@ -1446,6 +1514,13 @@ function showVerdict() {
 function renderTable() {
   const rows = [["Baseline (live 50/50 target)", state.baseline]];
   if (state.challenger) rows.push(["Your rule", state.challenger]);
+  if (state.best) rows.push(["Your personal best", {
+    rule: { mode: "saved code" },
+    score: state.best.score,
+    meanGap: state.best.meanGap,
+    maxGap: state.best.maxGap,
+    moved: state.best.moved,
+  }]);
   document.querySelector("#results-body").innerHTML = rows
     .map(
       ([name, r]) => `<tr>
@@ -1454,7 +1529,7 @@ function renderTable() {
         <td class="num">${r.score.toFixed(4)}</td>
         <td class="num">${pct(r.meanGap, 2)}</td>
         <td class="num">${pct(r.maxGap, 2)}</td>
-        <td class="num">${r.executions.reduce((a, e) => a + e.moved, 0)}</td>
+        <td class="num">${r.executions ? r.executions.reduce((a, e) => a + e.moved, 0) : r.moved}</td>
       </tr>`
     )
     .join("");

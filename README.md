@@ -147,6 +147,8 @@ The browser uses the same whole-box, equal-count and eligibility constraints as 
 HiGHS 1.15.3 runs the MILP in a Web Worker and a result is accepted only when the solver reports
 it as optimal. The cached Live 50/50 baseline was generated with that same solver version.
 The **Copy agent prompt** button gives an AI coding agent the full contract and scoring objective.
+The page saves the visitor's best score and its Python function in local browser storage, so later
+iterations cannot overwrite it. The saved code can be copied back to the clipboard from the scorecard.
 
 ## Publishing
 

@@ -377,9 +377,23 @@
            factory A; the optimiser still routes whole, eligible boxes.</p>
 
         <div class="function-contract" aria-label="Strategy function contract">
-          <div><code>skus</code><span>current global SKU volumes</span></div>
-          <div><code>context</code><span>execution number, eligibility, and prior history</span></div>
-          <div><code>return</code><span>one target number per SKU for factory A</span></div>
+          <div><code>skus[k]</code><span>current global units of SKU <em>k</em>, before the boxes are split</span></div>
+          <div><code>execution</code><span><code>context["execution"]</code>: current run number, starting at 0</span></div>
+          <div><code>total runs</code><span><code>context["nExecutions"]</code>: number of executions in the simulation</span></div>
+          <div><code>history</code><span><code>context["history"]</code>: earlier <code>{"skus": [...], "target": [...]}</code> values</span></div>
+          <div><code>eligibility</code><span><code>hostedAtA</code> / <code>hostedAtB</code>: Boolean lists showing which SKUs each factory can receive</span></div>
+          <div><code>return</code><span>one number per SKU: the units factory A should aim to receive</span></div>
+        </div>
+
+        <div class="baseline-example">
+          <div class="example-title">Baseline example · Live 50/50</div>
+          <p>For every SKU that factory A can host, target half of the current global volume.
+             This target moves whenever the orders change.</p>
+          <pre><code>def set_targets(skus, context):
+    return [
+        units * 0.5 if context["hostedAtA"][sku] else 0
+        for sku, units in enumerate(skus)
+    ]</code></pre>
         </div>
 
         <div class="field code-field">
@@ -411,9 +425,13 @@
       <div>
         <div class="scoreboard">
           <div class="score"><div class="k">Baseline score</div><div class="v" id="baseline-score-2">—</div></div>
-          <div class="score"><div class="k">Your score</div><div class="v" id="your-score">—</div></div>
-          <div class="score verdict"><div class="k">Difference</div><div class="v" id="verdict">—</div>
+          <div class="score"><div class="k">Current score</div><div class="v" id="your-score">—</div>
+            <div class="score-note">latest code run</div></div>
+          <div class="score verdict"><div class="k">Current vs baseline</div><div class="v" id="verdict">—</div>
             <div class="k" id="verdict-note">run a rule to compare</div></div>
+          <div class="score best-score"><div class="k">Your best score</div><div class="v" id="best-score">—</div>
+            <div class="score-note" id="best-score-note">saved in this browser</div>
+            <button class="mini-copy" id="copy-best-code" type="button" disabled>Copy best code</button></div>
         </div>
 
         <div id="lab">
@@ -466,6 +484,6 @@
 </footer>
 
 <script src="strategy-runner.js?v=3"></script>
-<script src="experience.js?v=15"></script>
+<script src="experience.js?v=16"></script>
 </body>
 </html>

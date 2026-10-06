@@ -186,6 +186,19 @@ details.advanced summary { cursor: pointer; font-size: 13px; color: var(--text-s
 .function-contract div { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: baseline; }
 .function-contract code { color: var(--ink); font-size: 12px; font-weight: 600; }
 .function-contract span { color: var(--muted); font-size: 12px; }
+.function-contract span code { font-weight: 500; }
+.baseline-example {
+  margin: 0 0 18px; padding: 12px; border: 1px solid var(--line-soft);
+  border-radius: 10px; background: var(--surface-1);
+}
+.baseline-example .example-title {
+  font: 600 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.baseline-example p { margin: 6px 0 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.baseline-example pre {
+  overflow-x: auto; margin: 0; padding: 10px; border-radius: 8px;
+  background: #16150f; color: #f3f0e7; font: 11px/1.55 var(--mono);
+}
 .code-field textarea {
   display: block; width: 100%; resize: vertical; min-height: 300px;
   border: 1px solid var(--line); border-radius: 10px; background: #16150f; color: #f3f0e7;
@@ -197,15 +210,22 @@ details.advanced summary { cursor: pointer; font-size: 13px; color: var(--text-s
 .code-actions .btn { padding: 8px 14px; font-size: 13px; }
 .copy-note { color: var(--good); font-size: 12.5px; min-height: 19px; margin-top: 8px; }
 
-.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.scoreboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
 .score {
   background: var(--panel); border: 1px solid var(--line);
   border-radius: 14px; padding: 16px 18px;
 }
 .score .k { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .score .v { font-family: var(--serif); font-size: 30px; line-height: 1.2; }
+.score-note { color: var(--muted); font-size: 11px; margin-top: 2px; }
 .score.verdict .v.win { color: var(--good); }
 .score.verdict .v.lose { color: var(--bad); }
+.mini-copy {
+  margin-top: 9px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--surface-1); color: var(--text-secondary); font: 600 10.5px var(--sans); cursor: pointer;
+}
+.mini-copy:hover:not(:disabled) { border-color: var(--muted); color: var(--ink); }
+.mini-copy:disabled { cursor: default; opacity: 0.45; }
 
 .playbar { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
 .playbar input[type="range"] { flex: 1; }
@@ -246,4 +266,8 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 60px; color: var(--m
   .hud { grid-template-columns: repeat(2, 1fr); }
   .solution-stage canvas.solution { min-height: 440px; }
   .code-field textarea { min-height: 270px; }
+}
+
+@media (max-width: 680px) {
+  .scoreboard { grid-template-columns: repeat(2, 1fr); }
 }
